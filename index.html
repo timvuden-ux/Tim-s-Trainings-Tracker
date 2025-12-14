@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tim's Toffe Trainingstijden Tracker</title>
+  
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Tims Tracker","short_name":"TTT","start_url":".","display":"standalone","background_color":"#0b0f1a","theme_color":"#0b0f1a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2964/2964514.png","sizes":"512x512","type":"image/png"}]}' />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    :root {
+      --bg: #0b0f1a; --text: #f4f7ff; --muted: #aab4d6; 
+      --card: #121831; --card-2: #0f1530; --border: #233160; 
+      --brand: #5eead4; --danger: #ff4d4d; --success: #4ade80; --warn: #fbbf24;
+      --radius: 16px; --shadow: 0 10px 24px rgba(0,0,0,.35);
+      --touch: 56px;
+    }
+    [data-theme="light"] {
+      --bg: #f0f2f5; --text: #1a202c; --muted: #64748b;
+      --card: #ffffff; --card-2: #f8fafc; --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    body.big-mode .btn { padding: 18px 24px; font-size: 18px; }
+    
+    *{box-sizing:border-box}
+    html,body{height:100%; overscroll-behavior-y: none;}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text); transition: background 0.3s, color 0.3s;}
+    
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border)}
+    .topbar h1{font-size:16px;margin:0;font-weight:800;cursor:pointer;user-select:none;}
+    .spacer{flex:1}
+    
+    .btn{appearance:none;border:1px solid var(--border);background:var(--card-2);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:600;cursor:pointer; transition: all 0.2s}
+    .btn:active{transform:scale(0.96)}
+    .btn:disabled{opacity: 0.5; cursor: not-allowed; filter: grayscale(1);}
+    .btn.small{padding:8px 10px;font-size:13px}
+    .btn.primary{border-color:var(--brand); background: rgba(94, 234, 212, 0.1); color: var(--brand);}
+    .btn.danger{border-color:var(--danger); color: var(--danger);}
+    .btn.save-icon{padding:4px 8px; font-size:12px; border-color:var(--success); color:var(--success); background:rgba(74, 222, 128, 0.1);}
+
+    /* AANGEPAST: Position fixed zorgt dat hij altijd in beeld blijft */
+    .tabs{
+        position:fixed; 
+        bottom:0; 
+        left:0;
+        width:100%;
+        z-index:50;
+        display:grid;
+        grid-template-columns:repeat(5,1fr);
+        gap:4px;
+        padding:8px;
+        background:var(--card);
+        border-top:1px solid var(--border);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.2); /* Extra schaduw voor duidelijkheid */
+    }
+
+    .tab-btn{display:flex;flex-direction:column;align-items:center;gap:4px;height:var(--touch);justify-content:center;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer}
+    .tab-btn.active{color:var(--brand); font-weight:bold}
+    
+    /* Padding onderaan main iets vergroot zodat content niet achter de balk verdwijnt */
+    main{padding:12px 12px 90px; max-width:800px; margin:0 auto;}
+    
+    section.view{display:none; animation: fadeIn 0.3s ease;}
+    section.view.active{display:block}
+    @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+    .card h2{margin:0 0 8px 0;font-size:16px; display:flex; justify-content:space-between; align-items:center}
+    
+    .row{display:grid;gap:10px}
+    .row.cols-2{grid-template-columns:1fr 1fr}
+    @media(min-width:640px){.row.cols-3{grid-template-columns:repeat(3,1fr)}}
+    
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+    input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text); outline:none; font-family:inherit;}
+    input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--card-2); }
+    
+    input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--brand); cursor: pointer; }
+    
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px; max-height: 400px;}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:var(--card-2);color:var(--muted);text-align:left;font-size:12px;padding:10px;}
+    tbody td{padding:10px;border-top:1px solid var(--border); font-size:14px;}
+    
+    .chart-box{height:240px; position:relative}
+    .clock{font-size:48px;font-weight:900;text-align:center;margin:10px 0; font-feature-settings: "tnum";}
+    .pill{padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;color:var(--muted); background:var(--bg)}
+
+    .user-lap-card { border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--card-2); }
+    .user-lap-card h3 { margin:0 0 8px 0; font-size:15px; color:var(--brand); border-bottom:1px solid var(--border); padding-bottom:4px; }
+    .mini-table { width:100%; font-size:13px; }
+    .mini-table th { text-align:left; color:var(--muted); font-weight:normal; font-size:11px; }
+    .mini-table td { padding: 4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    
+    #shotOverlay{display:none;position:fixed;inset:0;background:#fff;color:#000;z-index:9999;align-items:center;justify-content:center;font-size:18vw;font-weight:900;text-align:center;flex-direction:column}
+    .toast{position:fixed;right:12px;bottom:90px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow);z-index:100; border-left: 4px solid var(--brand);}
+    
+    #lapButtonsArea { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
+    .btn-wrap { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .btn-wrap .btn { flex: 1; padding: 16px; font-size: 16px; }
+
+    #confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
+    #btnExitFocus { display: none; margin-bottom: 12px; width: 100%; }
+    body.focus-mode #btnExitFocus { display: block; }
+    .img-overlay { max-width: 80vw; max-height: 50vh; margin-top: 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    
+    .lb-cat { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
+    .lb-cat h3 { color: var(--brand); margin: 0 0 10px 0; font-size: 15px; }
+    .lb-global-table { margin-bottom: 20px; }
+    .lb-global-table table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; width:100%; font-size:13px; margin-bottom:12px;}
+    .lb-global-table thead th { background: rgba(94, 234, 212, 0.1); color: var(--brand); font-weight: bold; }
+    
+    .lb-user-table { margin-top: 15px; border-top: 1px solid var(--border); padding-top:10px; }
+    .lb-user-table h3 { font-size: 16px; margin-bottom: 8px; color: var(--muted); }
+    
+    #groupStartBox { display:none; background:rgba(251, 191, 36, 0.1); border:1px solid var(--warn); padding:10px; margin-top:8px; border-radius:8px; text-align:center; }
+    .net-time { color: var(--success); font-weight:bold; }
+
+    .heatmap-container { display:flex; flex-direction:column; gap:4px; margin-top:20px; }
+    .heatmap-weeks { display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px; margin-top: 6px; }
+    .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); position:relative; }
+    .heatmap-cell:hover::after { content: attr(title); position: absolute; bottom: 100%; left:50%; transform:translateX(-50%); background: #000; padding: 4px; border-radius: 4px; font-size: 10px; white-space: nowrap; z-index: 10; }
+    .heatmap-cell.level-1 { background: rgba(94, 234, 212, 0.3); border-color:var(--brand); }
+    .heatmap-cell.level-2 { background: rgba(94, 234, 212, 0.6); border-color:var(--brand); }
+    .heatmap-cell.level-3 { background: var(--brand); box-shadow: 0 0 6px var(--brand); }
+    .legend { display:flex; gap:8px; font-size:11px; color:var(--muted); align-items:center; margin-top:4px;}
+    .legend span { width:10px; height:10px; display:inline-block; border-radius:2px; }
+
+    /* AANGEPAST: De code die de knoppen verbergt in landscape is verwijderd */
+    @media screen and (orientation: landscape) {
+        /* body:has(#tab-times.active) .topbar,  <-- DEZE REGELS ZIJN VERWIJDERD
+           body:has(#tab-times.active) .tabs { display: none !important; } */
+        
+        body:has(#tab-times.active) main { padding: 0; max-width: 100%; }
+        /* Hieronder wel behouden dat de grafiek mooi groot wordt, maar met ruimte voor menu onder */
+        body:has(#tab-times.active) .card { height: calc(100vh - 70px); margin: 0; border-radius: 0; overflow-y: auto; }
+        body:has(#tab-times.active) .chart-box { height: 70vh; }
+    }
+    
+    .ghost-runner-box { margin-top: 10px; font-weight: bold; color: var(--muted); text-align: center; font-size: 16px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px solid var(--border); transition: all 0.2s;}
+    .ghost-runner-box.positive { border-color: var(--success); color: var(--success); background: rgba(74, 222, 128, 0.1); }
+    .ghost-runner-box.negative { border-color: var(--danger); color: var(--danger); background: rgba(248, 113, 113, 0.1); }
+    .profile-img-small { width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 6px; object-fit: cover; border: 1px solid var(--border); }
+    
+    .ghost-target-input { width: 70px !important; padding: 4px !important; font-size: 12px !important; margin-left: auto; background: var(--card) !important; border: 1px solid var(--border); }
+    
+    #camPreview { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); display: none; }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+  
+  <header class="topbar">
+    <h1 id="appTitle" title="Klik...">Tim's Tracker</h1>
+    <div class="spacer"></div>
+    <button class="btn small" onclick="toggleSettings()">⚙️ Opties</button>
+  </header>
+
+  <main>
+    <section class="view active" id="tab-input">
+      <div class="card">
+        <h2>Nieuwe tijd (Handmatig)</h2>
+        <div class="row cols-3">
+          <div><label>Gebruiker</label><input id="user" placeholder="Naam" list="userlist" />
+            <datalist id="userlist"></datalist>
+          </div>
+          <div><label>Tijd</label><input id="time" type="number" step="0.01" placeholder="0.00" required /></div>
+          <div><label>Datum</label><input id="date" type="date" /></div>
+        </div>
+        <div class="row cols-2" style="margin-top:8px">
+          <div><label>Onderdeel</label>
+            <select id="raceType">
+              <option value="2km">2 km</option>
+              <option value="1km">1 km</option>
+              <option value="90m">90m Sprint</option>
+              <option value="obstacle">Obstakel Run</option>
+              <option value="overig">Overig</option>
+            </select>
+          </div>
+          <div><label>Type</label>
+            <select id="timeType">
+              <option value="training">Training</option>
+              <option value="record">Record</option>
+            </select>
+          </div>
+        </div>
+        <div class="row cols-2" style="margin-top:8px">
+            <div><label>Weer</label>
+                <select id="weatherInput">
+                    <option value="">-</option>
+                    <option value="☀️">☀️ Zon</option>
+                    <option value="☁️">☁️ Bewolkt</option>
+                    <option value="🌧️">🌧️ Regen</option>
+                    <option value="💨">💨 Wind</option>
+                    <option value="❄️">❄️ Koud</option>
+                    <option value="🥵">🥵 Heet</option>
+                </select>
+            </div>
+            <div><label>Notities</label><input id="notesInput" placeholder="Bijv. Gladde baan"></div>
+        </div>
+
+        <div class="actions" style="margin-top:10px">
+          <button class="btn primary" id="btnAddTime" style="width:100%">Opslaan</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="tab-times">
+      <p class="text-sm" style="text-align:center; margin-bottom:8px; opacity:0.6">💡 Draai je scherm voor focus modus</p>
+
+      <div class="card">
+        <h2 id="intervalTitle">📉 Interval Analyse (Laatste)</h2>
+        <p class="text-sm">Klik op 📊 in de tabel om een specifieke race te zien.</p>
+        <div class="chart-box"><canvas id="c_interval"></canvas></div>
+      </div>
+
+      <div id="chartsContainer"></div>
+
+      <div class="card" style="margin-top:20px">
+        <h2>📅 Trainingsactiviteit (Jaaroverzicht)</h2>
+        <div class="heatmap-container">
+            <div id="heatmap" class="heatmap-weeks"></div>
+            <div class="legend">
+                Minder <span style="background:rgba(255,255,255,0.1)"></span>
+                <span style="background:rgba(94, 234, 212, 0.3)"></span>
+                <span style="background:rgba(94, 234, 212, 0.6)"></span>
+                <span style="background:var(--brand)"></span> Meer
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="tab-leaderboard">
+      <div class="card">
+        <h2>🏆 Records</h2>
+        <div id="leaderboardContent"></div>
+      </div>
+    </section>
+
+    <section class="view" id="tab-stopwatch">
+      <button id="btnExitFocus" class="btn" onclick="toggleFocusMode()">🔓 Verlaat Focus Mode</button>
+
+      <div class="card">
+        <div class="flex-between">
+          <h2>Stopwatch</h2>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
+              <input type="checkbox" id="selfTrain" onchange="toggleCamera(this.checked)"> 🎥 Zelf
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
+              <input type="checkbox" id="ghostToggle" onchange="configureGhost(this.checked)"> 👻 Ghost
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
+              <input type="checkbox" id="startDelay"> ⏳ 5s
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
+              <input type="checkbox" id="groupStart"> 👥 Groep
+            </label>
+          </div>
+        </div>
+        
+        <video id="camPreview" autoplay playsinline muted></video>
+        <canvas id="camCanvas" style="display:none"></canvas>
+        
+        <div style="background:rgba(94, 234, 212, 0.05); padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:10px; margin-top:8px;">
+          <label style="color:var(--brand); font-weight:bold; margin-bottom:4px;">Onderdeel selecteren</label>
+          <select id="swRaceType" style="border-color:var(--brand)" onchange="updateDistanceInput()">
+            <option value="2km">2 km</option>
+            <option value="1km">1 km</option>
+            <option value="90m">90m Sprint</option>
+            <option value="obstacle">Obstakel Run</option>
+            <option value="overig">Overig</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Afstand (m)</label>
+            <input id="lapDistance" type="number" placeholder="Afstand" value="2000" disabled />
+          </div>
+        </div>
+
+        <div class="clock" id="stopwatch">00:00.000</div>
+        
+        <div id="ghostDisplay" class="ghost-runner-box" style="display:none;"></div>
+
+        <div id="groupStartBox">
+            <span style="color:var(--warn); font-weight:bold; display:block; font-size:12px">VOLGENDE START OVER:</span>
+            <span id="groupCounter" style="font-size:24px; font-weight:900">10</span>
+        </div>
+
+        <div class="actions" style="justify-content:center; margin-top:10px">
+          <button class="btn primary" id="startStopwatch">Start</button>
+          <button class="btn danger" id="stopStopwatch">Stop</button>
+          <button class="btn" id="resetStopwatch">Reset</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:8px">
+        <div class="flex-between">
+          <h2 style="font-size:14px;color:var(--muted)">Laps</h2>
+          <div>
+              <button id="btnSetupCount" class="btn small" onclick="changeRunnerCount()">Aantal 🔢</button>
+              <button id="btnSetupNames" class="btn small" onclick="renameUsers()">Namen ✏️</button>
+          </div>
+        </div>
+        <div id="lapButtonsArea"></div>
+      </div>
+      
+      <div id="individualLapsArea" style="margin-top:12px;"></div>
+    </section>
+
+    <section class="view" id="tab-starts">
+      <div class="card"><h2>Start Signalen</h2>
+        <div class="actions">
+          <button class="btn" onclick="startSequence('schot')">🔫 Start Schot</button>
+          <button class="btn" onclick="startSequence('flags')">🚩 Beach Flags</button>
+          <button class="btn" onclick="startSequence('sprint')">🏃 Beach Sprint</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settingsModal" style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:16px; padding:20px; max-width:90%; width:400px;">
+    <h2>Instellingen</h2>
+    
+    <details style="margin-bottom:15px; border:1px solid var(--border); border-radius:8px; padding:8px;">
+        <summary style="cursor:pointer; font-weight:bold; color:var(--brand)">👤 Profielen Beheren</summary>
+        <div id="profileSettings" style="margin-top:10px; display:grid; gap:8px;"></div>
+    </details>
+
+    <div class="row">
+      <button class="btn" onclick="toggleTheme()">🌓 Light/Dark Mode</button>
+      <button class="btn" onclick="toggleBigMode()">🔆 Grote Knoppen</button>
+      <button class="btn" onclick="toggleFocusMode()">👀 Focus Modus</button>
+    </div>
+    
+    <div style="margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+        <label style="font-weight:bold; color:var(--brand)">☁️ Google Cloud Sync</label>
+        <p style="font-size:12px; margin:4px 0;">URL van je Google Web App:</p>
+        <input id="googleSheetUrl" placeholder="https://script.google.com/macros/s/..." onchange="saveGoogleUrl(this.value)">
+    </div>
+
+    <hr style="border:0; border-top:1px solid var(--border); margin:15px 0">
+    <div class="row">
+      <button class="btn" onclick="exportJSON()">💾 Backup</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">📂 Herstel</button>
+      <input type="file" id="importFile" style="display:none" onchange="importJSON(this)" accept=".json">
+      <button class="btn" id="btnExportCSV">📄 CSV</button>
+      <button class="btn danger" onclick="clearAllData()">🗑️ Alles Wissen</button>
+    </div>
+    <div class="actions" style="margin-top:20px">
+      <button class="btn primary" onclick="document.getElementById('settingsModal').close()">Sluiten</button>
+    </div>
+  </dialog>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-target="#tab-input">Invoer</button>
+    <button class="tab-btn" data-target="#tab-times">Data</button>
+    <button class="tab-btn" data-target="#tab-leaderboard">Records</button>
+    <button class="tab-btn" data-target="#tab-stopwatch">Klok</button>
+    <button class="tab-btn" data-target="#tab-starts">Start</button>
+  </nav>
+
+  <div id="shotOverlay"></div>
+
+  <script>
+    // ===== HIER STAAT JOUW GOOGLE LINK! =====
+    const GOOGLE_WEB_APP_URL = "PLAK_HIER_JE_EXEC_LINK_VAN_GOOGLE"; 
+
+    // ===== CONFIG & DATA =====
+    let appData = JSON.parse(localStorage.getItem('tt_data')) || {
+      sprint: { '2km':[], '1km':[], '90m':[], 'obstacle':[], 'overig':[] },
+      records: [],
+      userNames: ['Persoon 1','Persoon 2','Persoon 3','Persoon 4','Persoon 5'],
+      profiles: {},
+      settings: { theme:'dark', bigMode:false, focusMode:false, sheetUrl: '' }
+    };
+    ['1km','overig'].forEach(k => { if(!appData.sprint[k]) appData.sprint[k]=[]; });
+    if(!appData.profiles) appData.profiles = {};
+
+    let charts = {};
+    let stopwatchInt, countdownInt, groupInt, startTime;
+    let laps = {}; 
+    let wakeLock = null;
+    let groupStartActive = false;
+    let groupRunnersCount = 0; 
+    let userOrder = []; 
+    let ghostTargets = {}; 
+    let ghostTimer = null;
+    
+    // Camera / Motion vars
+    let motionInt = null;
+    let lastMotionTime = 0;
+    let camStream = null;
+
+    if(GOOGLE_WEB_APP_URL !== "PLAK_HIER_JE_EXEC_LINK_VAN_GOOGLE" && GOOGLE_WEB_APP_URL !== appData.settings.sheetUrl) {
+        appData.settings.sheetUrl = GOOGLE_WEB_APP_URL;
+        localStorage.setItem('tt_data', JSON.stringify(appData));
+    }
+
+    const save = () => localStorage.setItem('tt_data', JSON.stringify(appData));
+
+    // ===== INIT =====
+    window.onload = function() {
+        if(!document.getElementById('date').value) document.getElementById('date').valueAsDate = new Date();
+        applySettings(); renderTablesAndCharts(); renderLapButtons(); updateDistanceInput();
+        
+        const savedStart = localStorage.getItem('sw_start');
+        if(savedStart) {
+            startTime = parseInt(savedStart);
+            const savedState = JSON.parse(localStorage.getItem('sw_state') || '{}');
+            groupStartActive = savedState.groupStartActive || false;
+            if(groupStartActive) document.getElementById('groupStart').checked = true;
+            const savedLaps = localStorage.getItem('sw_laps');
+            if(savedLaps) laps = JSON.parse(savedLaps);
+            startSW();
+            renderIndividualTables();
+        }
+    };
+
+    // ===== UI SETUP =====
+    function applySettings(){
+      document.body.setAttribute('data-theme', appData.settings.theme);
+      document.body.classList.toggle('big-mode', appData.settings.bigMode);
+      document.body.classList.toggle('focus-mode', appData.settings.focusMode);
+      document.getElementById('googleSheetUrl').value = appData.settings.sheetUrl || '';
+      const els = document.querySelectorAll('.tab-btn:not([data-target="#tab-stopwatch"])');
+      els.forEach(e => e.style.display = appData.settings.focusMode ? 'none' : 'flex');
+      renderProfileSettings();
+    }
+    function toggleTheme(){ appData.settings.theme = appData.settings.theme==='dark'?'light':'dark'; save(); applySettings(); }
+    function toggleBigMode(){ appData.settings.bigMode = !appData.settings.bigMode; save(); applySettings(); }
+    function toggleFocusMode(){ appData.settings.focusMode = !appData.settings.focusMode; save(); applySettings(); }
+    function toggleSettings(){ document.getElementById('settingsModal').showModal(); }
+    function saveGoogleUrl(val){ appData.settings.sheetUrl = val.trim(); save(); showToast('URL Opgeslagen'); }
+
+    function activateTab(sel){
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.target===sel));
+      document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
+      document.querySelector(sel).classList.add('active');
+      if(sel === '#tab-leaderboard') updateLeaderboard();
+      if(sel === '#tab-times') renderTablesAndCharts();
+    }
+    document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>activateTab(b.dataset.target));
+
+    function toggleSetupButtons(disabled) {
+        document.getElementById('btnSetupCount').disabled = disabled;
+        document.getElementById('btnSetupNames').disabled = disabled;
+    }
+
+    // ===== PROFILES & SYNC =====
+    function renderProfileSettings(){
+        const div = document.getElementById('profileSettings'); div.innerHTML='';
+        appData.userNames.forEach(name => {
+            const prof = appData.profiles[name] || { color: '#5eead4', img: '' };
+            div.innerHTML += `<div style="display:flex; gap:8px; align-items:center; background:var(--bg); padding:6px; border-radius:6px;"><strong style="width:80px; font-size:12px;">${name}</strong><input type="color" value="${prof.color}" onchange="saveProfile('${name}', 'color', this.value)" style="width:30px; height:30px; padding:0; border:none;"><input type="text" value="${prof.img}" placeholder="Foto URL" onchange="saveProfile('${name}', 'img', this.value)" style="flex:1; font-size:11px;"></div>`;
+        });
+    }
+    function saveProfile(name, key, val){
+        if(!appData.profiles[name]) appData.profiles[name] = { color: '#5eead4', img: '' };
+        appData.profiles[name][key] = val; save();
+    }
+    function getProfile(name){ return appData.profiles[name] || { color: `hsl(${name.charCodeAt(0)*15 % 360}, 70%, 60%)`, img: null }; }
+
+    function syncToCloud(entry){
+        let url = appData.settings.sheetUrl;
+        if(!url) return;
+        fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) })
+        .then(() => showToast('☁️ Verzonden naar Cloud')).catch(e => showToast('⚠️ Cloud Error'));
+    }
+
+    // ===== HELPERS =====
+    const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    function beep(freq=1200, type='square', dur=0.1){
+      if(audioCtx.state==='suspended') audioCtx.resume();
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type=type; o.frequency.value=freq;
+      g.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+      o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur);
+    }
+    
+    function renderUserList(){
+      const dl = document.getElementById('userlist'); dl.innerHTML='';
+      const allUsers = new Set();
+      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => allUsers.add(x.user)));
+      appData.userNames.forEach(u => allUsers.add(u)); 
+      allUsers.forEach(u => dl.innerHTML += `<option value="${u}">`);
+    }
+
+    function calculateTrendline(data) {
+        const n = data.length; if (n < 2) return null;
+        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+        data.forEach((p, i) => { sumX += i; sumY += p.y; sumXY += i * p.y; sumXX += i * i; });
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        return data.map((_, i) => ({ x: data[i].x, y: slope * i + intercept }));
+    }
+
+    // ===== DATA TAB =====
+    function renderTablesAndCharts(){
+      const container = document.getElementById('chartsContainer'); container.innerHTML = '';
+      
+      const hm = document.getElementById('heatmap'); hm.innerHTML='';
+      const activityMap = {}; 
+      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => {
+          const d = new Date(x.date);
+          const onejan = new Date(d.getFullYear(),0,1);
+          const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay()+1)/7);
+          activityMap[week] = (activityMap[week] || 0) + 1;
+      }));
+      for(let i=1; i<=26; i++){ 
+          const d = document.createElement('div'); d.className='heatmap-cell';
+          const count = activityMap[i]||0; d.title = `Week ${i}: ${count}`;
+          if(count > 0) d.classList.add('level-1'); if(count > 2) d.classList.add('level-2'); if(count > 5) d.classList.add('level-3');
+          hm.appendChild(d);
+      }
+
+      // INTERVAL ANALYSIS: ONLY LAST CLOCKED
+      let intervalData = null;
+      let latestEntry = null;
+      
+      ['2km','1km','90m','obstacle','overig'].forEach(type => {
+          const arr = appData.sprint[type];
+          if(arr && arr.length > 0) {
+              const entry = arr[arr.length - 1];
+              if(entry.splits && entry.splits.length > 0) {
+                  latestEntry = entry;
+                  intervalData = { label: `${entry.user} (${type})`, data: entry.splits, date: entry.date };
+              }
+          }
+      });
+      renderIntervalChart(intervalData);
+
+      ['2km','1km','90m','obstacle','overig'].forEach(type => {
+        const data = appData.sprint[type];
+        if(!data || data.length === 0) return;
+        
+        const avg = data.reduce((a,b)=>a+b.time,0) / data.length;
+
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2>${type}</h2>
+            <span class="pill">Team Gem: ${avg.toFixed(2)}</span>
+          </div>
+          <div class="chart-box"><canvas id="c_${type}"></canvas></div>
+          <div class="table-wrap" style="margin-top:10px">
+            <table data-type="${type}">
+              <thead><tr><th>Wie</th><th>Datum</th><th>Tijd</th><th>Actie</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>`;
+        container.appendChild(card);
+
+        const tbody = card.querySelector('tbody');
+        const sorted = [...data].sort((a,b)=>a.time - b.time);
+        sorted.forEach((entry, idx) => {
+          const tr = document.createElement('tr');
+          const realIdx = appData.sprint[type].indexOf(entry);
+          
+          let actionHtml = `<button class="btn small danger" onclick="deleteTime('${type}', ${realIdx})">🗑️</button>`;
+          if(entry.splits && entry.splits.length > 0) {
+              actionHtml = `<button class="btn small" onclick="showIntervals('${type}', ${realIdx})" style="margin-right:4px;">📊</button>` + actionHtml;
+          }
+
+          tr.innerHTML = `<td>${entry.user} ${entry.weather||''}</td><td>${entry.date}</td><td>${entry.time}</td><td>${actionHtml}</td>`;
+          tbody.appendChild(tr);
+        });
+
+        const ctx = card.querySelector('canvas').getContext('2d');
+        const uniqueUsers = [...new Set(data.map(d=>d.user))];
+        const datasets = [];
+        
+        uniqueUsers.forEach(u => {
+          const uData = data.filter(d=>d.user === u).map(d=>({x:d.date, y:d.time}));
+          const prof = getProfile(u);
+          datasets.push({ label: u, data: uData, borderColor: prof.color, tension:0.3, pointRadius:4 });
+          if(uData.length > 2){
+              const trend = calculateTrendline(uData);
+              if(trend) datasets.push({ label: `${u} (Trend)`, data: trend, borderColor: prof.color, borderDash:[5,5], pointRadius:0, borderWidth:1 });
+          }
+        });
+
+        if(charts[type]) charts[type].destroy();
+        charts[type] = new Chart(ctx, { type: 'line', data: { datasets }, options: { responsive:true, maintainAspectRatio:false, scales: { x:{type:'category'} } } });
+      });
+      renderUserList();
+    }
+
+    function showIntervals(type, index) {
+        const entry = appData.sprint[type][index];
+        if(entry && entry.splits) {
+            renderIntervalChart({
+                label: `${entry.user} (${type})`,
+                data: entry.splits,
+                date: entry.date
+            });
+            document.querySelector('#intervalTitle').scrollIntoView({behavior: 'smooth'});
+        }
+    }
+
+    function renderIntervalChart(intervalData) {
+        const intCtx = document.getElementById('c_interval').getContext('2d');
+        const titleEl = document.getElementById('intervalTitle');
+        
+        if(charts['interval']) charts['interval'].destroy();
+        
+        if(intervalData) {
+            titleEl.innerText = `📉 Verval: ${intervalData.label} op ${intervalData.date}`;
+            charts['interval'] = new Chart(intCtx, {
+                type: 'line', 
+                data: { 
+                    labels: intervalData.data.map((_,i)=>`Ronde ${i+1}`), 
+                    datasets: [{ 
+                        label: "Rondetijd (s)", 
+                        data: intervalData.data,
+                        borderColor: '#5eead4',
+                        backgroundColor: 'rgba(94, 234, 212, 0.2)',
+                        pointRadius: 4,
+                        tension: 0.2
+                    }] 
+                },
+                options: { 
+                    responsive:true, 
+                    maintainAspectRatio:false, 
+                    plugins: { legend: { labels: { color: '#aab4d6' } } }, 
+                    scales: { 
+                        y: { ticks: { color: '#aab4d6' }, title: {display: true, text: 'Seconden'} }, 
+                        x: { ticks: { color: '#aab4d6' } } 
+                    } 
+                }
+            });
+        } else {
+            titleEl.innerText = "📉 Interval Analyse (Geen data)";
+        }
+    }
+
+    function deleteTime(type, idx){ if(confirm('Verwijderen?')){ appData.sprint[type].splice(idx, 1); save(); renderTablesAndCharts(); updateLeaderboard(); } }
+
+    function addTime(){
+      const u=document.getElementById('user').value, t=parseFloat(document.getElementById('time').value), d=document.getElementById('date').value, rt=document.getElementById('raceType').value;
+      const w=document.getElementById('weatherInput').value, n=document.getElementById('notesInput').value;
+      if(!u || !t || !d) return alert('Vul alles in');
+      saveTimeInternal(u, t, d, rt, 'training', null, w, n);
+      document.getElementById('time').value='';
+    }
+    document.getElementById('btnAddTime').onclick = addTime;
+
+    function saveTimeInternal(user, time, date, raceType, timeType='training', splits=null, weather='', notes=''){
+      if(raceType==='90m' && (time<9 || time>30)) return alert('Tijd onrealistisch voor 90m.');
+      const entry = {user, time, date, raceType, splits, weather, notes, timestamp: Date.now()};
+      if(timeType==='record') appData.records.push(entry); else appData.sprint[raceType].push(entry);
+      save(); syncToCloud(entry); showToast(`${user} opgeslagen!`);
+      updateLeaderboard(); 
+    }
+
+    // ===== RECORDS (LEADERBOARD FIXED) =====
+    function updateLeaderboard(){
+      const div = document.getElementById('leaderboardContent'); div.innerHTML='';
+      const raceTypes = ['2km','1km','90m','obstacle','overig'];
+      
+      const allUsers = new Set();
+      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => allUsers.add(x.user)));
+      const uniqueUsers = Array.from(allUsers);
+
+      // 1. GLOBAL TOP 3
+      raceTypes.forEach(type => {
+          const data = appData.sprint[type];
+          if(!data || data.length === 0) return;
+          const sorted = [...data].sort((a,b)=>a.time - b.time).slice(0,3);
+          
+          let html = `<div class="lb-global-table">
+            <h3>🏆 ${type} - Top 3</h3>
+            <div class="table-wrap"><table><thead><tr><th>#</th><th>Naam</th><th>Datum</th><th>Tijd</th></tr></thead><tbody>`;
+          sorted.forEach((d, i) => {
+              html += `<tr><td>${i+1}</td><td>${d.user}</td><td>${d.date}</td><td><b>${d.time}</b></td></tr>`;
+          });
+          html += `</tbody></table></div></div>`;
+          div.innerHTML += html;
+      });
+
+      div.innerHTML += `<hr style="border:0; border-top:1px dashed var(--border); margin:20px 0;">`;
+
+      if(uniqueUsers.length === 0) {
+          div.innerHTML += `<p style="text-align:center; color:var(--muted)">Nog geen data.</p>`;
+          return;
+      }
+
+      uniqueUsers.forEach(user => {
+          let hasRecords = false;
+          let userHtml = `<div class="lb-user-table">
+            <h3>👤 ${user} - PR's</h3>
+            <div class="table-wrap"><table><thead><tr><th>Onderdeel</th><th>Datum</th><th>PR Tijd</th></tr></thead><tbody>`;
+          
+          raceTypes.forEach(type => {
+              const data = appData.sprint[type].filter(d => d.user === user);
+              if(data.length > 0) {
+                  const pr = data.reduce((prev, curr) => prev.time < curr.time ? prev : curr);
+                  userHtml += `<tr><td>${type}</td><td>${pr.date}</td><td><b>${pr.time}</b></td></tr>`;
+                  hasRecords = true;
+              } else {
+                  userHtml += `<tr><td>${type}</td><td>-</td><td>-</td></tr>`;
+              }
+          });
+          userHtml += `</tbody></table></div></div>`;
+          if(hasRecords) div.innerHTML += userHtml;
+      });
+    }
+
+    // ===== STOPWATCH & CAMERA =====
+    function updateDistanceInput() {
+      const type = document.getElementById('swRaceType').value;
+      const distInput = document.getElementById('lapDistance');
+      if(type === '2km') { distInput.value = 2000; distInput.disabled = true; }
+      else if(type === '1km') { distInput.value = 1000; distInput.disabled = true; }
+      else if(type === '90m') { distInput.value = 90; distInput.disabled = true; }
+      else { distInput.value = ''; distInput.disabled = false; distInput.placeholder="Afstand (m)"; }
+      renderIndividualTables(); 
+    }
+
+    function renameUsers(){ 
+        appData.userNames = appData.userNames.map((n,i) => prompt(`Naam voor knop ${i+1}?`, n) || n); 
+        appData.userNames = appData.userNames.filter(n => n.trim() !== '');
+        save(); renderLapButtons(); renderIndividualTables(); renderUserList(); renderProfileSettings();
+    }
+
+    function changeRunnerCount(){
+        const c = prompt("Hoeveel deelnemers?", appData.userNames.length);
+        if(c && !isNaN(c)){
+            const count = parseInt(c);
+            const current = appData.userNames;
+            const newNames = [];
+            for(let i=0; i<count; i++){ newNames.push(current[i] || `Persoon ${i+1}`); }
+            appData.userNames = newNames;
+            save(); renderLapButtons(); renderIndividualTables();
+        }
+    }
+    
+    function configureGhost(checked){
+        const disp = document.getElementById('ghostDisplay');
+        if(checked){
+            appData.userNames.forEach(name => {
+                let def = ghostTargets[name] || '';
+                let val = prompt(`Ghost Doeltijd voor ${name} (minuten)?`, def);
+                if(val) ghostTargets[name] = parseFloat(val);
+            });
+            disp.style.display = 'block';
+            disp.innerHTML = "Ghost actief. Start de klok!";
+        } else {
+            disp.style.display = 'none';
+        }
+    }
+
+    // CAMERA LOGIC
+    function toggleCamera(enable){
+        const video = document.getElementById('camPreview');
+        if(enable){
+            video.style.display = 'block';
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => {
+                camStream = stream;
+                video.srcObject = stream;
+            }).catch(err => {
+                alert("Camera toegang geweigerd of niet beschikbaar.");
+                document.getElementById('selfTrain').checked = false;
+                video.style.display = 'none';
+            });
+        } else {
+            if(camStream) camStream.getTracks().forEach(track => track.stop());
+            video.style.display = 'none';
+            clearInterval(motionInt);
+        }
+    }
+
+    function startMotionDetection(){
+        const video = document.getElementById('camPreview');
+        const canvas = document.getElementById('camCanvas');
+        const ctx = canvas.getContext('2d');
+        let prevFrame = null;
+        
+        motionInt = setInterval(() => {
+            if(video.readyState === video.HAVE_ENOUGH_DATA){
+                canvas.width = 100; canvas.height = 100; // Low res for perf
+                ctx.drawImage(video, 0, 0, 100, 100);
+                const currentFrame = ctx.getImageData(0, 0, 100, 100);
+                
+                if(prevFrame){
+                    let diff = 0;
+                    for(let i=0; i<currentFrame.data.length; i+=4){
+                        diff += Math.abs(currentFrame.data[i] - prevFrame.data[i]); // Check R channel
+                    }
+                    // Simple threshold
+                    if(diff > 500000 && (Date.now() - lastMotionTime > 3000)){ // 3s cooldown
+                        lastMotionTime = Date.now();
+                        appData.userNames.forEach((n, i) => recordLap(n, i));
+                        beep(1000, 'square', 0.1);
+                        showToast("📸 Beweging gedetecteerd!");
+                    }
+                }
+                prevFrame = currentFrame;
+            }
+        }, 100); // Check every 100ms
+    }
+
+    function renderLapButtons(){
+      const area = document.getElementById('lapButtonsArea'); area.innerHTML='';
+      userOrder = []; 
+      
+      appData.userNames.forEach((name, i) => {
+        laps[name] = laps[name] || [];
+        userOrder.push({ name: name, index: i }); 
+        
+        const wrap = document.createElement('div'); wrap.className = 'btn-wrap';
+        const btn = document.createElement('button'); btn.className='btn'; btn.style.flex = "1"; btn.innerText = name;
+        btn.onclick = () => { 
+            if(!stopwatchInt && !countdownInt) return; 
+            
+            // Allow manual click even in self-train mode
+            recordLap(name, i); 
+            beep(800, 'triangle', 0.05);
+        };
+        wrap.appendChild(btn); area.appendChild(wrap);
+      });
+      
+      groupRunnersCount = userOrder.length;
+    }
+
+    document.getElementById('startStopwatch').onclick = () => {
+      if(stopwatchInt || countdownInt) return;
+      toggleSetupButtons(true);
+      const selfTrain = document.getElementById('selfTrain').checked;
+      
+      if(selfTrain){
+          let c = 10; document.getElementById('stopwatch').innerText = c;
+          countdownInt = setInterval(()=>{
+              c--;
+              if(c>0) { document.getElementById('stopwatch').innerText = c; }
+              else {
+                  clearInterval(countdownInt); countdownInt=null;
+                  document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
+                  setTimeout(()=>{ 
+                      startSW(); 
+                      startMotionDetection(); 
+                  }, 100);
+              }
+          }, 1000);
+          return;
+      }
+
+      groupStartActive = document.getElementById('groupStart').checked;
+      if(groupStartActive && groupRunnersCount > 0){
+          let c = 5; document.getElementById('stopwatch').innerText = c;
+          countdownInt = setInterval(()=>{
+              c--;
+              if(c>0) { document.getElementById('stopwatch').innerText = c; }
+              else {
+                  clearInterval(countdownInt); countdownInt=null;
+                  document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
+                  setTimeout(()=>{ startSW(); if(groupRunnersCount > 1) startGroupInterval(); }, 100);
+              }
+          }, 1000);
+      } else {
+        const delay = document.getElementById('startDelay').checked;
+        if(delay) {
+          let count = 5; document.getElementById('stopwatch').innerText = count;
+          countdownInt = setInterval(() => {
+            count--;
+            if(count > 0) { document.getElementById('stopwatch').innerText = count; } else {
+              clearInterval(countdownInt); countdownInt = null;
+              document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
+              setTimeout(startSW, 100);
+            }
+          }, 1000);
+        } else { startSW(); }
+      }
+    };
+
+    function startSW(){
+      startTime = Date.now();
+      localStorage.setItem('sw_start', startTime);
+      localStorage.setItem('sw_state', JSON.stringify({ groupStartActive }));
+      if('wakeLock' in navigator) navigator.wakeLock.request('screen').then(w=>wakeLock=w).catch(()=>{});
+      stopwatchInt = setInterval(updateStopwatch, 10);
+    }
+
+    function updateStopwatch(){
+        const now = Date.now();
+        const ms = now - startTime;
+        document.getElementById('stopwatch').innerText = new Date(ms).toISOString().slice(14, 22);
+    }
+    
+    function startGroupInterval(){
+        let nextStart = 1; 
+        const box = document.getElementById('groupStartBox');
+        const counter = document.getElementById('groupCounter');
+        if(groupRunnersCount > 1) {
+            box.style.display = 'block'; counter.innerText = 10;
+            let localCount = 10;
+            groupInt = setInterval(()=>{
+                localCount--;
+                counter.innerText = localCount;
+                if(localCount <= 0){
+                    beep(800, 'square', 0.3);
+                    nextStart++; localCount = 10;
+                    if(nextStart >= groupRunnersCount){ clearInterval(groupInt); box.style.display='none'; }
+                }
+            }, 1000);
+        }
+    }
+    
+    document.getElementById('stopStopwatch').onclick = () => { 
+      clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(countdownInt); countdownInt=null; clearInterval(groupInt); groupInt=null;
+      clearInterval(motionInt);
+      toggleSetupButtons(false);
+      document.getElementById('groupStartBox').style.display='none'; if(wakeLock) wakeLock.release(); 
+      localStorage.removeItem('sw_start');
+    };
+    
+    document.getElementById('resetStopwatch').onclick = () => { 
+      clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(countdownInt); countdownInt=null; clearInterval(groupInt); groupInt=null;
+      clearInterval(motionInt);
+      toggleSetupButtons(false);
+      document.getElementById('groupStartBox').style.display='none'; document.getElementById('stopwatch').innerText='00:00.000';
+      Object.keys(laps).forEach(k=>laps[k]=[]); 
+      localStorage.removeItem('sw_start');
+      localStorage.removeItem('sw_laps');
+      renderIndividualTables();
+    };
+
+    function recordLap(name, userIndex){
+      const totalMs = Date.now()-startTime;
+      const last = laps[name][laps[name].length-1];
+      const splitMs = totalMs - (last ? last.totalMs : 0);
+      
+      const totalStr = new Date(totalMs).toISOString().slice(14, 22);
+      const splitStr = new Date(splitMs).toISOString().slice(14, 22);
+      
+      let speedStr = '-';
+      let saveVal;
+      const dist = parseFloat(document.getElementById('lapDistance').value);
+      const type = document.getElementById('swRaceType').value;
+
+      let calcDist = dist;
+      if(type === '2km' || type === '1km') calcDist = 200; 
+      if(type === '90m') calcDist = 90;
+
+      // START UPDATE: Snelheid correctie voor Groepstart
+      // Als groepstart actief is, berekenen we eerst de Netto tijd (Tussentijd)
+      let netMs = totalMs;
+      if(groupStartActive){
+          const startDelayMs = userIndex * 10000;
+          netMs = totalMs - startDelayMs;
+          if(netMs < 0) netMs = 0; 
+      }
+
+      // Voor de snelheidsberekening: gebruik de Netto Tussentijd als dit de EERSTE ronde is in een groepsstart.
+      // Bij latere rondes is splitMs correct (want dat is het verschil tussen twee tijden, waardoor de start-vertraging wegvalt).
+      let timeForSpeed = splitMs;
+      if(groupStartActive && (!laps[name] || laps[name].length === 0)) {
+          timeForSpeed = netMs;
+      }
+
+      if(calcDist > 0 && timeForSpeed > 0) {
+        const seconds = timeForSpeed / 1000;
+        const kmh = (calcDist / seconds) * 3.6;
+        speedStr = kmh.toFixed(1) + ' km/u';
+      }
+      // END UPDATE
+
+      if(type === '2km' || type === '1km' || type === 'obstacle') saveVal = (totalMs/60000).toFixed(2);
+      else saveVal = (totalMs/1000).toFixed(2);
+
+      let tussentijdStr = null;
+      let netSaveVal = saveVal;
+      
+      if(groupStartActive){
+          tussentijdStr = new Date(netMs).toISOString().slice(14, 22);
+          if(type === '2km' || type === '1km' || type === 'obstacle') netSaveVal = (netMs/60000).toFixed(2);
+          else netSaveVal = (netMs/1000).toFixed(2);
+      }
+
+      laps[name].push({ totalMs, totalStr, splitStr, speedStr, saveVal, tussentijdStr, netSaveVal, splitMs }); // splitMs toegevoegd voor latere opslag
+      localStorage.setItem('sw_laps', JSON.stringify(laps));
+      
+      // GHOST FEEDBACK
+      const ghostActive = document.getElementById('ghostToggle').checked;
+      const targetMin = ghostTargets[name];
+      
+      if(ghostActive && targetMin) {
+          let totalLapsNeeded = 1;
+          if(type === '2km') totalLapsNeeded = 10;
+          if(type === '1km') totalLapsNeeded = 5;
+          
+          let lapsDone = laps[name].length;
+          let targetTotalMs = targetMin * 60000;
+          let targetAtThisPoint = (targetTotalMs / totalLapsNeeded) * lapsDone;
+          
+          let actualTimeUsed = groupStartActive ? (totalMs - (userIndex * 10000)) : totalMs;
+          let diffMs = actualTimeUsed - targetAtThisPoint; 
+          let diffSec = (diffMs / 1000).toFixed(1);
+          
+          const disp = document.getElementById('ghostDisplay');
+          disp.style.display = 'block';
+          
+          if(diffMs > 0) {
+              disp.innerHTML = `${name}: <span class="behind">+${diffSec}s</span> (Achter)`;
+              disp.className = 'ghost-runner-box negative';
+          } else {
+              disp.innerHTML = `${name}: <span class="ahead">${diffSec}s</span> (Voor)`;
+              disp.className = 'ghost-runner-box positive';
+          }
+          if(ghostTimer) clearTimeout(ghostTimer);
+          ghostTimer = setTimeout(() => { disp.style.display = 'none'; }, 5000);
+      }
+
+      renderIndividualTables();
+    }
+
+    function renderIndividualTables(){
+      const container = document.getElementById('individualLapsArea'); container.innerHTML = '';
+      const raceType = document.getElementById('swRaceType').value;
+
+      appData.userNames.forEach((name, userIndex) => {
+         const userLaps = laps[name];
+         if(!userLaps || userLaps.length === 0) return;
+
+         const card = document.createElement('div'); card.className = 'user-lap-card';
+         const prof = getProfile(name);
+         let imgHtml = prof.img ? `<img src="${prof.img}" class="profile-img-small">` : '';
+
+         let rows = '';
+         let lastLap = null;
+
+         [...userLaps].forEach((l, i) => {
+             const lapNum = i + 1;
+             lastLap = l;
+             let showSave = false;
+             if(raceType === '2km' && lapNum === 10) showSave = true;
+             else if(raceType === '1km' && lapNum === 5) showSave = true;
+             else if(raceType === '90m' && lapNum === 1) showSave = true;
+             else if(raceType === 'obstacle' || raceType === 'overig') showSave = true; 
+
+             const valToSave = groupStartActive ? l.netSaveVal : l.saveVal;
+             
+             rows += `
+               <tr>
+                 <td>${lapNum}</td>
+                 <td style="font-weight:bold; color:var(--text)">${l.totalStr}</td>
+                 <td style="color:var(--muted)">${l.splitStr}</td>
+                 ${groupStartActive ? `<td class="net-time">${l.tussentijdStr}</td>` : ''}
+                 <td>${l.speedStr}</td>
+                 <td style="text-align:right">
+                   ${showSave ? `<button class="btn save-icon" onclick="saveLapDirect('${name}', '${valToSave}', '${raceType}')">💾</button>` : ''}
+                 </td>
+               </tr>`;
+         });
+
+         const tussentijdHeader = groupStartActive ? '<th>Tussentijd</th>' : '';
+         let finalTimeHtml = '';
+         const finished = (raceType === '2km' && userLaps.length === 10) || (raceType === '1km' && userLaps.length === 5) || (raceType === '90m' && userLaps.length === 1);
+         if(groupStartActive && lastLap && finished) {
+             finalTimeHtml = `<p style="font-size:14px; margin: 8px 0 0 0;">Definitieve Eindtijd: <span class="net-time">${lastLap.tussentijdStr}</span></p>`;
+         }
+
+         card.innerHTML = `<h3>${imgHtml} ${name}</h3><table class="mini-table"><thead><tr><th style="width:20px">#</th><th>Tijd</th><th>Ronde Tijd</th>${tussentijdHeader}<th>Km/u</th><th style="text-align:right"></th></tr></thead><tbody>${rows}</tbody></table>${finalTimeHtml}`;
+         container.appendChild(card);
+      });
+    }
+
+    function saveLapDirect(user, timeStr, raceType){
+        const time = parseFloat(timeStr);
+        const today = new Date().toISOString().split('T')[0];
+        const units = (raceType === '2km' || raceType === '1km' || raceType === 'obstacle') ? 'minuten' : 'seconden';
+        
+        let splitData = null;
+        // START UPDATE: Splits als getallen opslaan voor grafiek
+        if(laps[user]) {
+            splitData = laps[user].map(l => parseFloat((l.splitMs/1000).toFixed(2))); 
+        }
+        // END UPDATE
+
+        if(confirm(`Tijd ${time} ${units} opslaan voor ${user}?`)){
+            saveTimeInternal(user, time, today, raceType, 'training', splitData, document.getElementById('weatherInput').value, document.getElementById('notesInput').value);
+        }
+    }
+
+    // ===== STARTS =====
+    function speak(txt){ 
+        const u=new SpeechSynthesisUtterance(txt); 
+        u.lang='en-US'; u.rate=0.85; u.volume = 1; 
+        speechSynthesis.speak(u); 
+    }
+    function startSequence(type){
+      const ov = document.getElementById('shotOverlay'); ov.style.display='flex'; ov.innerHTML='Wait...';
+      const randomDelay = 1000 + Math.random()*2000; 
+      if(type==='schot'){
+        let c=3; ov.innerHTML=c;
+        const i = setInterval(()=>{ c--; if(c>0)ov.innerText=c; else { clearInterval(i); ov.innerText='BANG!'; beep(800, 'sawtooth', 0.6); setTimeout(()=>ov.style.display='none',1000); } },1000);
+      } 
+      else if (type === 'flags') {
+          ov.innerHTML = "Competitors Ready..."; speak("Competitors Ready");
+          setTimeout(() => {
+              ov.innerHTML = "Heads Down!"; speak("Heads Down");
+              setTimeout(() => { ov.innerText = 'GO!'; beep(1000, 'square', 2.0); setTimeout(()=>ov.style.display='none',1000); }, 3000 + Math.random()*2000); 
+          }, 4000); 
+      }
+      else if (type === 'sprint') {
+          ov.innerHTML = "On your marks..."; speak("On your marks");
+          setTimeout(() => {
+              ov.innerHTML = "Set!"; speak("Set");
+              setTimeout(() => { ov.innerText = 'GO!'; beep(1000, 'square', 2.0); setTimeout(()=>ov.style.display='none',1000); }, 3000 + Math.random()*2000); 
+          }, 4000);
+      }
+    }
+
+    function exportJSON(){
+      const blob = new Blob([JSON.stringify(appData)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'training_backup.json'; a.click();
+    }
+    function importJSON(input){ const fr = new FileReader(); fr.onload = e => { appData = JSON.parse(e.target.result); save(); location.reload(); }; fr.readAsText(input.files[0]); }
+    function clearAllData(){ if(confirm('Echt alles wissen?')) { localStorage.removeItem('tt_data'); location.reload(); } }
+    document.getElementById('btnExportCSV').onclick = () => {
+      let csv = "User,Date,Type,Time\n"; Object.keys(appData.sprint).forEach(t => appData.sprint[t].forEach(r => csv+=`${r.user},${r.date},${t},${r.time}\n`));
+      const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv); a.download='export.csv'; a.click();
+    };
+
+    let clicks=0, timer;
+    document.getElementById('appTitle').onclick = () => {
+      clicks++; clearTimeout(timer); timer=setTimeout(()=>clicks=0, 5000);
+      const o=document.getElementById('shotOverlay');
+      if(clicks===10){
+        o.style.display='flex'; o.style.background='#000'; o.style.color='#fff';
+        o.innerHTML="<h1>YOU CAN'T<br><span style='color:red'>SEE ME!</span></h1><img src='https://i.kym-cdn.com/entries/icons/original/000/007/659/cena.jpg' class='img-overlay'>";
+        speak("You can't see me");
+        setTimeout(()=> { if(clicks < 11) { o.style.display='none'; o.style.background='#fff'; o.style.color='#000'; o.innerHTML=''; } }, 3000); 
+      }
+      if(clicks===20){
+        o.style.display='flex'; o.style.background='#000'; o.style.color='#fff';
+        let blink = setInterval(()=> o.style.color = o.style.color==='red'?'#fff':'red', 200);
+        o.innerHTML="<h1 style='font-size:10vw'>HET MAAKT NIET UIT<br>WAT JE WILT! 🤨</h1><img src='https://media1.tenor.com/m/7N50_3yW7t8AAAAd/the-rock-rock.gif' class='img-overlay'>";
+        speak("It doesn't matter what you think");
+        setTimeout(()=> { clearInterval(blink); o.style.display='none'; o.style.background='#fff'; o.style.color='#000'; o.innerHTML=''; clicks=0; }, 4000); 
+      }
+    };
+
+    function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+  </script>
+</body>
+</html>
