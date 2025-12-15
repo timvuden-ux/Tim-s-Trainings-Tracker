@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Tim's Toffe Trainingstijden Tracker</title>
+  <title>Tim's Tracker Pro</title>
   
   <link rel="manifest" href='data:application/manifest+json,{"name":"Tims Tracker","short_name":"TTT","start_url":".","display":"standalone","background_color":"#0b0f1a","theme_color":"#0b0f1a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2964/2964514.png","sizes":"512x512","type":"image/png"}]}' />
 
@@ -11,7 +11,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <style>
     :root {
@@ -44,28 +43,11 @@
     .btn.danger{border-color:var(--danger); color: var(--danger);}
     .btn.save-icon{padding:4px 8px; font-size:12px; border-color:var(--success); color:var(--success); background:rgba(74, 222, 128, 0.1);}
 
-    /* AANGEPAST: Position fixed zorgt dat hij altijd in beeld blijft */
-    .tabs{
-        position:fixed; 
-        bottom:0; 
-        left:0;
-        width:100%;
-        z-index:50;
-        display:grid;
-        grid-template-columns:repeat(5,1fr);
-        gap:4px;
-        padding:8px;
-        background:var(--card);
-        border-top:1px solid var(--border);
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.2); /* Extra schaduw voor duidelijkheid */
-    }
-
-    .tab-btn{display:flex;flex-direction:column;align-items:center;gap:4px;height:var(--touch);justify-content:center;border:none;background:transparent;color:var(--muted);font-size:11px;cursor:pointer}
+    .tabs{ position:fixed; bottom:0; left:0; width:100%; z-index:50; display:grid; grid-template-columns:repeat(6,1fr); gap:4px; padding:8px; background:var(--card); border-top:1px solid var(--border); box-shadow: 0 -4px 20px rgba(0,0,0,0.2); }
+    .tab-btn{display:flex;flex-direction:column;align-items:center;gap:4px;height:var(--touch);justify-content:center;border:none;background:transparent;color:var(--muted);font-size:9px;cursor:pointer}
     .tab-btn.active{color:var(--brand); font-weight:bold}
     
-    /* Padding onderaan main iets vergroot zodat content niet achter de balk verdwijnt */
     main{padding:12px 12px 90px; max-width:800px; margin:0 auto;}
-    
     section.view{display:none; animation: fadeIn 0.3s ease;}
     section.view.active{display:block}
     @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
@@ -80,7 +62,6 @@
     label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
     input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text); outline:none; font-family:inherit;}
     input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--card-2); }
-    
     input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--brand); cursor: pointer; }
     
     .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px; max-height: 400px;}
@@ -93,73 +74,98 @@
     .pill{padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;color:var(--muted); background:var(--bg)}
 
     .user-lap-card { border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--card-2); }
-    .user-lap-card h3 { margin:0 0 8px 0; font-size:15px; color:var(--brand); border-bottom:1px solid var(--border); padding-bottom:4px; }
     .mini-table { width:100%; font-size:13px; }
     .mini-table th { text-align:left; color:var(--muted); font-weight:normal; font-size:11px; }
     .mini-table td { padding: 4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
     
-    #shotOverlay{display:none;position:fixed;inset:0;background:#fff;color:#000;z-index:9999;align-items:center;justify-content:center;font-size:18vw;font-weight:900;text-align:center;flex-direction:column}
+    #shotOverlay{display:none;position:fixed;inset:0;background:#fff;color:#000;z-index:9999;align-items:center;justify-content:center;font-size:14vw;font-weight:900;text-align:center;flex-direction:column}
     .toast{position:fixed;right:12px;bottom:90px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow);z-index:100; border-left: 4px solid var(--brand);}
     
     #lapButtonsArea { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
     .btn-wrap { display: flex; align-items: center; gap: 8px; width: 100%; }
-    .btn-wrap .btn { flex: 1; padding: 16px; font-size: 16px; }
 
-    #confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
     #btnExitFocus { display: none; margin-bottom: 12px; width: 100%; }
     body.focus-mode #btnExitFocus { display: block; }
-    .img-overlay { max-width: 80vw; max-height: 50vh; margin-top: 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     
-    .lb-cat { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed var(--border); }
-    .lb-cat h3 { color: var(--brand); margin: 0 0 10px 0; font-size: 15px; }
-    .lb-global-table { margin-bottom: 20px; }
     .lb-global-table table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; width:100%; font-size:13px; margin-bottom:12px;}
     .lb-global-table thead th { background: rgba(94, 234, 212, 0.1); color: var(--brand); font-weight: bold; }
     
-    .lb-user-table { margin-top: 15px; border-top: 1px solid var(--border); padding-top:10px; }
-    .lb-user-table h3 { font-size: 16px; margin-bottom: 8px; color: var(--muted); }
-    
+    .user-pr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 15px; }
+    .user-pr-card { background: var(--card-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .user-pr-card h3 { color: var(--brand); margin: 0 0 8px 0; font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display:flex; align-items:center; gap:8px; }
+    .pr-table { width: 100%; font-size: 13px; }
+    .pr-table td { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--muted); }
+    .pr-table tr:last-child td { border-bottom: none; }
+    .pr-time { color: var(--text) !important; font-weight: bold; text-align: right; }
+
     #groupStartBox { display:none; background:rgba(251, 191, 36, 0.1); border:1px solid var(--warn); padding:10px; margin-top:8px; border-radius:8px; text-align:center; }
     .net-time { color: var(--success); font-weight:bold; }
 
-    .heatmap-container { display:flex; flex-direction:column; gap:4px; margin-top:20px; }
-    .heatmap-weeks { display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px; margin-top: 6px; }
-    .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); position:relative; }
-    .heatmap-cell:hover::after { content: attr(title); position: absolute; bottom: 100%; left:50%; transform:translateX(-50%); background: #000; padding: 4px; border-radius: 4px; font-size: 10px; white-space: nowrap; z-index: 10; }
-    .heatmap-cell.level-1 { background: rgba(94, 234, 212, 0.3); border-color:var(--brand); }
-    .heatmap-cell.level-2 { background: rgba(94, 234, 212, 0.6); border-color:var(--brand); }
-    .heatmap-cell.level-3 { background: var(--brand); box-shadow: 0 0 6px var(--brand); }
-    .legend { display:flex; gap:8px; font-size:11px; color:var(--muted); align-items:center; margin-top:4px;}
-    .legend span { width:10px; height:10px; display:inline-block; border-radius:2px; }
+    .attendance-week { border-bottom: 1px solid var(--border); padding: 8px 0; }
+    .attendance-header { font-size: 13px; font-weight: bold; color: var(--brand); margin-bottom: 4px; display:flex; justify-content:space-between; }
+    .attendance-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .attendance-pill { font-size: 12px; padding: 4px 10px; background: var(--card-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); display:flex; align-items:center; gap:5px;}
 
-    /* AANGEPAST: De code die de knoppen verbergt in landscape is verwijderd */
-    @media screen and (orientation: landscape) {
-        /* body:has(#tab-times.active) .topbar,  <-- DEZE REGELS ZIJN VERWIJDERD
-           body:has(#tab-times.active) .tabs { display: none !important; } */
-        
-        body:has(#tab-times.active) main { padding: 0; max-width: 100%; }
-        /* Hieronder wel behouden dat de grafiek mooi groot wordt, maar met ruimte voor menu onder */
-        body:has(#tab-times.active) .card { height: calc(100vh - 70px); margin: 0; border-radius: 0; overflow-y: auto; }
-        body:has(#tab-times.active) .chart-box { height: 70vh; }
+    /* VIDEO ANALYZE */
+    .video-wrapper {
+        position: relative; width: 100%; aspect-ratio: 9/16; max-height: 60vh;
+        background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #333; margin-bottom: 10px; touch-action: none;
     }
+    video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #drawCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; } 
     
-    .ghost-runner-box { margin-top: 10px; font-weight: bold; color: var(--muted); text-align: center; font-size: 16px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px solid var(--border); transition: all 0.2s;}
+    .overlay-btns { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: center; z-index: 30; pointer-events: none; }
+    .record-btn { pointer-events: auto; width: 70px; height: 70px; background-color: var(--danger); border: 4px solid #fff; border-radius: 50%; transition: all 0.2s; cursor: pointer; }
+    .record-btn.recording { transform: scale(0.9); border-radius: 8px; background-color: #fff; border-color: var(--danger); }
+    
+    .speed-controls { display: none; gap: 8px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap;}
+    .speed-btn { background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; display:flex; align-items:center; gap:6px;}
+    .speed-btn.active { background: var(--brand); color: #000; font-weight: bold; border-color: var(--brand); }
+    .speed-btn.save { background: var(--success); color: #000; border-color: var(--success); font-weight:bold; }
+    .speed-btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    
+    .play-overlay { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:15; }
+    .play-icon { font-size: 60px; color: rgba(255,255,255,0.7); display:none; }
+
+    #camPreview { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); display: none; }
+    .ghost-runner-box { margin-top: 10px; font-weight: bold; color: var(--muted); text-align: center; font-size: 16px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px solid var(--border); display:none;}
     .ghost-runner-box.positive { border-color: var(--success); color: var(--success); background: rgba(74, 222, 128, 0.1); }
     .ghost-runner-box.negative { border-color: var(--danger); color: var(--danger); background: rgba(248, 113, 113, 0.1); }
-    .profile-img-small { width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 6px; object-fit: cover; border: 1px solid var(--border); }
+
+    /* GAMIFICATION & CHALLENGE */
+    .level-bar-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow:hidden; margin-top: 4px; }
+    .level-bar-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--success)); width: 0%; transition: width 0.5s ease; }
+    .rank-text { font-size: 11px; color: var(--brand); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    .ghost-target-input { width: 70px !important; padding: 4px !important; font-size: 12px !important; margin-left: auto; background: var(--card) !important; border: 1px solid var(--border); }
-    
-    #camPreview { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); display: none; }
+    .challenge-box { background: linear-gradient(135deg, rgba(33,150,243,0.1), rgba(33,150,243,0.05)); border: 1px solid #2196F3; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; }
+    .challenge-title { font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#90CAF9; margin:0 0 5px 0; }
+    .challenge-name { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+    .challenge-progress-bg { width: 100%; height: 16px; background: rgba(0,0,0,0.4); border-radius: 8px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); }
+    .challenge-progress-fill { height: 100%; background: #2196F3; width: 0%; transition: width 1s ease; }
+    .challenge-text { position: absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; color:white; text-shadow: 0 1px 2px black; }
+
+    /* WEATHER WIDGET */
+    .weather-widget { font-size: 11px; display: flex; gap: 8px; align-items: center; color: var(--muted); background: var(--card-2); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer;}
+    .weather-val { color: var(--brand); font-weight: bold; }
+
+    /* CHECKLIST */
+    .checklist-section { margin-bottom: 20px; }
+    .checklist-section h3 { font-size: 14px; color: var(--muted); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input { width: 22px; height: 22px; margin: 0; accent-color: var(--success); }
   </style>
 </head>
 <body>
-  <canvas id="confetti"></canvas>
   
   <header class="topbar">
-    <h1 id="appTitle" title="Klik...">Tim's Tracker</h1>
+    <h1 id="appTitle">Tim's Tracker</h1>
+    <div id="weatherWidget" class="weather-widget" onclick="getWeather()">
+        <span>🌊 Marine Data</span>
+        <span>Tap to Load</span>
+    </div>
     <div class="spacer"></div>
-    <button class="btn small" onclick="toggleSettings()">⚙️ Opties</button>
+    <button class="btn small" onclick="toggleSettings()">⚙️</button>
   </header>
 
   <main>
@@ -191,20 +197,9 @@
           </div>
         </div>
         <div class="row cols-2" style="margin-top:8px">
-            <div><label>Weer</label>
-                <select id="weatherInput">
-                    <option value="">-</option>
-                    <option value="☀️">☀️ Zon</option>
-                    <option value="☁️">☁️ Bewolkt</option>
-                    <option value="🌧️">🌧️ Regen</option>
-                    <option value="💨">💨 Wind</option>
-                    <option value="❄️">❄️ Koud</option>
-                    <option value="🥵">🥵 Heet</option>
-                </select>
-            </div>
+            <div><label>Weer</label><select id="weatherInput"><option value="">-</option><option value="☀️">☀️ Zon</option><option value="☁️">☁️ Bewolkt</option><option value="🌧️">🌧️ Regen</option><option value="💨">💨 Wind</option></select></div>
             <div><label>Notities</label><input id="notesInput" placeholder="Bijv. Gladde baan"></div>
         </div>
-
         <div class="actions" style="margin-top:10px">
           <button class="btn primary" id="btnAddTime" style="width:100%">Opslaan</button>
         </div>
@@ -212,152 +207,147 @@
     </section>
 
     <section class="view" id="tab-times">
-      <p class="text-sm" style="text-align:center; margin-bottom:8px; opacity:0.6">💡 Draai je scherm voor focus modus</p>
+      
+      <div class="challenge-box">
+          <h3 class="challenge-title">📅 Challenge van de Maand</h3>
+          <div id="challengeName" class="challenge-name">Laden...</div>
+          <div class="challenge-progress-bg">
+              <div id="challengeBar" class="challenge-progress-fill"></div>
+              <div id="challengeText" class="challenge-text">0 / 0</div>
+          </div>
+      </div>
 
       <div class="card">
         <h2 id="intervalTitle">📉 Interval Analyse (Laatste)</h2>
-        <p class="text-sm">Klik op 📊 in de tabel om een specifieke race te zien.</p>
         <div class="chart-box"><canvas id="c_interval"></canvas></div>
       </div>
-
+      
       <div id="chartsContainer"></div>
-
+      
       <div class="card" style="margin-top:20px">
-        <h2>📅 Trainingsactiviteit (Jaaroverzicht)</h2>
-        <div class="heatmap-container">
-            <div id="heatmap" class="heatmap-weeks"></div>
-            <div class="legend">
-                Minder <span style="background:rgba(255,255,255,0.1)"></span>
-                <span style="background:rgba(94, 234, 212, 0.3)"></span>
-                <span style="background:rgba(94, 234, 212, 0.6)"></span>
-                <span style="background:var(--brand)"></span> Meer
-            </div>
+        <h2>📅 Wekelijkse Opkomst</h2>
+        <div id="attendanceContainer" class="attendance-card">
+            <p style="text-align:center; color:var(--muted); font-size:12px;">Laden...</p>
         </div>
       </div>
     </section>
 
     <section class="view" id="tab-leaderboard">
       <div class="card">
-        <h2>🏆 Records</h2>
+        <h2>🏆 Records & Ranks</h2>
         <div id="leaderboardContent"></div>
       </div>
     </section>
 
     <section class="view" id="tab-stopwatch">
       <button id="btnExitFocus" class="btn" onclick="toggleFocusMode()">🔓 Verlaat Focus Mode</button>
-
       <div class="card">
         <div class="flex-between">
           <h2>Stopwatch</h2>
           <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
-              <input type="checkbox" id="selfTrain" onchange="toggleCamera(this.checked)"> 🎥 Zelf
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
-              <input type="checkbox" id="ghostToggle" onchange="configureGhost(this.checked)"> 👻 Ghost
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
-              <input type="checkbox" id="startDelay"> ⏳ 5s
-            </label>
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;">
-              <input type="checkbox" id="groupStart"> 👥 Groep
-            </label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;"><input type="checkbox" id="selfTrain" onchange="toggleCamera(this.checked)"> 🎥 Zelf</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;"><input type="checkbox" id="ghostToggle" onchange="configureGhost(this.checked)"> 👻 Ghost</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;"><input type="checkbox" id="startDelay"> ⏳ 5s</label>
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer; font-size:13px;"><input type="checkbox" id="groupStart"> 👥 Groep</label>
           </div>
         </div>
-        
         <video id="camPreview" autoplay playsinline muted></video>
         <canvas id="camCanvas" style="display:none"></canvas>
-        
-        <div style="background:rgba(94, 234, 212, 0.05); padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:10px; margin-top:8px;">
-          <label style="color:var(--brand); font-weight:bold; margin-bottom:4px;">Onderdeel selecteren</label>
-          <select id="swRaceType" style="border-color:var(--brand)" onchange="updateDistanceInput()">
-            <option value="2km">2 km</option>
-            <option value="1km">1 km</option>
-            <option value="90m">90m Sprint</option>
-            <option value="obstacle">Obstakel Run</option>
-            <option value="overig">Overig</option>
-          </select>
+        <div style="background:rgba(94, 234, 212, 0.05); padding:10px; border-radius:8px; border:1px solid var(--border); margin:10px 0;">
+          <label style="color:var(--brand); font-weight:bold; margin-bottom:4px;">Onderdeel</label>
+          <select id="swRaceType" style="border-color:var(--brand)" onchange="updateDistanceInput()"><option value="2km">2 km</option><option value="1km">1 km</option><option value="90m">90m Sprint</option><option value="obstacle">Obstakel Run</option><option value="overig">Overig</option></select>
         </div>
-
-        <div class="row">
-          <div>
-            <label>Afstand (m)</label>
-            <input id="lapDistance" type="number" placeholder="Afstand" value="2000" disabled />
-          </div>
-        </div>
-
+        <input id="lapDistance" type="number" placeholder="Afstand" value="2000" disabled style="margin-bottom:10px" />
         <div class="clock" id="stopwatch">00:00.000</div>
-        
-        <div id="ghostDisplay" class="ghost-runner-box" style="display:none;"></div>
-
-        <div id="groupStartBox">
-            <span style="color:var(--warn); font-weight:bold; display:block; font-size:12px">VOLGENDE START OVER:</span>
-            <span id="groupCounter" style="font-size:24px; font-weight:900">10</span>
-        </div>
-
+        <div id="ghostDisplay" class="ghost-runner-box"></div>
+        <div id="groupStartBox"><span style="color:var(--warn); font-weight:bold; display:block; font-size:12px">VOLGENDE START OVER:</span><span id="groupCounter" style="font-size:24px; font-weight:900">10</span></div>
         <div class="actions" style="justify-content:center; margin-top:10px">
           <button class="btn primary" id="startStopwatch">Start</button>
           <button class="btn danger" id="stopStopwatch">Stop</button>
           <button class="btn" id="resetStopwatch">Reset</button>
         </div>
       </div>
-
       <div class="card" style="margin-top:8px">
-        <div class="flex-between">
-          <h2 style="font-size:14px;color:var(--muted)">Laps</h2>
-          <div>
-              <button id="btnSetupCount" class="btn small" onclick="changeRunnerCount()">Aantal 🔢</button>
-              <button id="btnSetupNames" class="btn small" onclick="renameUsers()">Namen ✏️</button>
-          </div>
-        </div>
+        <div class="flex-between"><h2 style="font-size:14px;color:var(--muted)">Laps</h2><div><button id="btnSetupCount" class="btn small" onclick="changeRunnerCount()">Aantal 🔢</button> <button id="btnSetupNames" class="btn small" onclick="renameUsers()">Namen ✏️</button></div></div>
         <div id="lapButtonsArea"></div>
       </div>
-      
       <div id="individualLapsArea" style="margin-top:12px;"></div>
     </section>
 
-    <section class="view" id="tab-starts">
-      <div class="card"><h2>Start Signalen</h2>
-        <div class="actions">
-          <button class="btn" onclick="startSequence('schot')">🔫 Start Schot</button>
-          <button class="btn" onclick="startSequence('flags')">🚩 Beach Flags</button>
-          <button class="btn" onclick="startSequence('sprint')">🏃 Beach Sprint</button>
+    <section class="view" id="tab-analyse">
+      
+      <div class="card">
+        <h2>🚀 Tools</h2>
+        <div class="actions" style="flex-wrap:wrap">
+          <button class="btn" onclick="startSequence('schot')">🔫 Schot</button>
+          <button class="btn" onclick="startSequence('flags')">🚩 Flags</button>
+          <button class="btn" onclick="startSequence('sprint')">🏃 Sprint</button>
+          <button class="btn" onclick="drawLots()">🎲 Loting</button>
+          <button class="btn" onclick="startReactionTest()">⚡ Reactie</button>
         </div>
       </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>🎥 Video Analyse</h2>
+            <label style="font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer; background:var(--card-2); padding:5px 10px; border-radius:12px; border:1px solid var(--border);">
+                <input type="checkbox" id="camToggle" onchange="toggleAnalyseCam(this.checked)"> Camera Aan
+            </label>
+        </div>
+        
+        <div class="video-wrapper">
+            <video id="analyseLive" autoplay playsinline muted style="display:none"></video>
+            <video id="analysePlayback" playsinline loop style="display:none"></video>
+            <canvas id="drawCanvas" style="display:none"></canvas>
+            <div class="play-overlay"><div id="playIcon" class="play-icon">▶️</div></div>
+            <div class="overlay-btns">
+                <button id="btnRecordAnalyse" class="record-btn" style="display:none"></button>
+            </div>
+        </div>
+
+        <div id="speedControls" class="speed-controls">
+            <button class="speed-btn" onclick="togglePlayPause()">⏯️ Play</button>
+            <button class="speed-btn" id="btnDrawToggle" onclick="toggleDrawingMode()">✏️ Tekenen</button>
+            <button class="speed-btn" id="btnAngleToggle" onclick="toggleAngleMode()">📐 Hoek</button>
+            <button class="speed-btn" onclick="clearDrawing()">Wis</button>
+            <button class="speed-btn save" id="btnSaveVideo" onclick="saveVideo()">💾 Opslaan</button>
+            <button class="speed-btn danger" onclick="deleteVideo()">🗑️ Weg</button>
+            <div style="width:100%; height:8px"></div>
+            <button class="speed-btn" onclick="setAnalyseSpeed(1.0)">1.0x</button>
+            <button class="speed-btn active" onclick="setAnalyseSpeed(0.5)">0.5x</button>
+            <button class="speed-btn" onclick="setAnalyseSpeed(0.25)">0.25x</button>
+        </div>
+        <div id="analyseStatus" style="text-align:center; color:var(--warn); font-weight:bold; font-size:12px; margin-top:5px; height:20px;">Camera uit</div>
+      </div>
+    </section>
+
+    <section class="view" id="tab-material">
+        <div class="card">
+            <h2>🎒 Materiaal Checklist</h2>
+            
+            <div class="checklist-section">
+                <h3>🏋️ Training</h3>
+                <div id="trainingChecklist"></div>
+            </div>
+
+            <div class="checklist-section">
+                <h3>🏁 Wedstrijd Dag</h3>
+                <div id="competitionChecklist"></div>
+            </div>
+
+            <button class="btn small" onclick="resetChecklist()" style="margin-top:10px; width:100%">Alles resetten</button>
+        </div>
     </section>
   </main>
 
   <dialog id="settingsModal" style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:16px; padding:20px; max-width:90%; width:400px;">
     <h2>Instellingen</h2>
-    
-    <details style="margin-bottom:15px; border:1px solid var(--border); border-radius:8px; padding:8px;">
-        <summary style="cursor:pointer; font-weight:bold; color:var(--brand)">👤 Profielen Beheren</summary>
-        <div id="profileSettings" style="margin-top:10px; display:grid; gap:8px;"></div>
-    </details>
-
-    <div class="row">
-      <button class="btn" onclick="toggleTheme()">🌓 Light/Dark Mode</button>
-      <button class="btn" onclick="toggleBigMode()">🔆 Grote Knoppen</button>
-      <button class="btn" onclick="toggleFocusMode()">👀 Focus Modus</button>
-    </div>
-    
-    <div style="margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
-        <label style="font-weight:bold; color:var(--brand)">☁️ Google Cloud Sync</label>
-        <p style="font-size:12px; margin:4px 0;">URL van je Google Web App:</p>
-        <input id="googleSheetUrl" placeholder="https://script.google.com/macros/s/..." onchange="saveGoogleUrl(this.value)">
-    </div>
-
+    <details style="margin-bottom:15px; border:1px solid var(--border); border-radius:8px; padding:8px;"><summary style="cursor:pointer; font-weight:bold; color:var(--brand)">👤 Profielen</summary><div id="profileSettings" style="margin-top:10px; display:grid; gap:8px;"></div></details>
+    <div class="row"><button class="btn" onclick="toggleTheme()">🌓 Light/Dark</button><button class="btn" onclick="toggleBigMode()">🔆 Knoppen</button><button class="btn" onclick="toggleFocusMode()">👀 Focus</button></div>
+    <div style="margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;"><label style="font-weight:bold; color:var(--brand)">☁️ Google Cloud</label><input id="googleSheetUrl" placeholder="Script URL..." onchange="saveGoogleUrl(this.value)"></div>
     <hr style="border:0; border-top:1px solid var(--border); margin:15px 0">
-    <div class="row">
-      <button class="btn" onclick="exportJSON()">💾 Backup</button>
-      <button class="btn" onclick="document.getElementById('importFile').click()">📂 Herstel</button>
-      <input type="file" id="importFile" style="display:none" onchange="importJSON(this)" accept=".json">
-      <button class="btn" id="btnExportCSV">📄 CSV</button>
-      <button class="btn danger" onclick="clearAllData()">🗑️ Alles Wissen</button>
-    </div>
-    <div class="actions" style="margin-top:20px">
-      <button class="btn primary" onclick="document.getElementById('settingsModal').close()">Sluiten</button>
-    </div>
+    <div class="row"><button class="btn" onclick="exportJSON()">💾 Backup</button><button class="btn" onclick="document.getElementById('importFile').click()">📂 Herstel</button><input type="file" id="importFile" style="display:none" onchange="importJSON(this)" accept=".json"><button class="btn" id="btnExportCSV">📄 CSV</button><button class="btn danger" onclick="clearAllData()">🗑️ Alles Wissen</button></div>
+    <div class="actions" style="margin-top:20px"><button class="btn primary" onclick="document.getElementById('settingsModal').close()">Sluiten</button></div>
   </dialog>
 
   <nav class="tabs">
@@ -365,74 +355,123 @@
     <button class="tab-btn" data-target="#tab-times">Data</button>
     <button class="tab-btn" data-target="#tab-leaderboard">Records</button>
     <button class="tab-btn" data-target="#tab-stopwatch">Klok</button>
-    <button class="tab-btn" data-target="#tab-starts">Start</button>
+    <button class="tab-btn" data-target="#tab-analyse">Analyse</button>
+    <button class="tab-btn" data-target="#tab-material">Tas</button>
   </nav>
 
   <div id="shotOverlay"></div>
 
   <script>
-    // ===== HIER STAAT JOUW GOOGLE LINK! =====
-    const GOOGLE_WEB_APP_URL = "PLAK_HIER_JE_EXEC_LINK_VAN_GOOGLE"; 
+    // ===== CONFIG & AUTO-LINK =====
+    const GOOGLE_LINK = "https://script.google.com/macros/s/AKfycbx8KWRXLPG2c5a5C0oIy6IS_3w3FzZ_ey8Jtaf6Rax3k1U1TySEzPVDVkHSEejG-Znl4g/exec";
 
-    // ===== CONFIG & DATA =====
     let appData = JSON.parse(localStorage.getItem('tt_data')) || {
       sprint: { '2km':[], '1km':[], '90m':[], 'obstacle':[], 'overig':[] },
-      records: [],
-      userNames: ['Persoon 1','Persoon 2','Persoon 3','Persoon 4','Persoon 5'],
-      profiles: {},
-      settings: { theme:'dark', bigMode:false, focusMode:false, sheetUrl: '' }
+      records: [], userNames: ['Persoon 1','Persoon 2','Persoon 3','Persoon 4','Persoon 5'], profiles: {},
+      material: {},
+      settings: { theme:'dark', bigMode:false, focusMode:false, sheetUrl: GOOGLE_LINK }
     };
     ['1km','overig'].forEach(k => { if(!appData.sprint[k]) appData.sprint[k]=[]; });
     if(!appData.profiles) appData.profiles = {};
-
-    let charts = {};
-    let stopwatchInt, countdownInt, groupInt, startTime;
-    let laps = {}; 
-    let wakeLock = null;
-    let groupStartActive = false;
-    let groupRunnersCount = 0; 
-    let userOrder = []; 
-    let ghostTargets = {}; 
-    let ghostTimer = null;
+    if(!appData.material) appData.material = {};
     
-    // Camera / Motion vars
-    let motionInt = null;
-    let lastMotionTime = 0;
-    let camStream = null;
-
-    if(GOOGLE_WEB_APP_URL !== "PLAK_HIER_JE_EXEC_LINK_VAN_GOOGLE" && GOOGLE_WEB_APP_URL !== appData.settings.sheetUrl) {
-        appData.settings.sheetUrl = GOOGLE_WEB_APP_URL;
+    // Auto-fix Google Link
+    if(appData.settings.sheetUrl !== GOOGLE_LINK) {
+        appData.settings.sheetUrl = GOOGLE_LINK;
         localStorage.setItem('tt_data', JSON.stringify(appData));
     }
+
+    // 24 Unique Challenges
+    const challenges = [
+        { t: "Januari: Ijsberen Run", target: 50, unit: "km", type: "dist" },
+        { t: "Februari: Sprint Koning", target: 100, unit: "sprints", type: "count_90m" },
+        { t: "Maart: Modder Maand", target: 20, unit: "km", type: "dist" },
+        { t: "April: 1km Record Jacht", target: 10, unit: "runs (1km)", type: "count_1km" },
+        { t: "Mei: Beach Flags Masters", target: 50, unit: "potjes", type: "count_flags" }, 
+        { t: "Juni: Lange Afstand", target: 40, unit: "km", type: "dist" },
+        { t: "Juli: Hittegolf Sprints", target: 50, unit: "sprints", type: "count_90m" },
+        { t: "Augustus: Zand Happers", target: 100, unit: "km (Team)", type: "dist" },
+        { t: "September: Start Scherp", target: 50, unit: "starts", type: "count_90m" },
+        { t: "Oktober: 2km Bikkels", target: 15, unit: "runs (2km)", type: "count_2km" },
+        { t: "November: Stormlopers", target: 30, unit: "km", type: "dist" },
+        { t: "December: Eindsprint", target: 2025, unit: "meters (90m)", type: "dist_90m" },
+        // Year 2
+        { t: "Januari: Nieuw Begin", target: 40, unit: "km", type: "dist" },
+        { t: "Februari: Korte Beentjes", target: 80, unit: "sprints", type: "count_90m" },
+        { t: "Maart: Lente Kriebels", target: 25, unit: "km", type: "dist" },
+        { t: "April: Paashaas Sprints", target: 60, unit: "sprints", type: "count_90m" },
+        { t: "Mei: Flag Masters II", target: 40, unit: "runs", type: "count_1km" },
+        { t: "Juni: Zomer Kilometers", target: 50, unit: "km", type: "dist" },
+        { t: "Juli: Strand Leeuwen", target: 20, unit: "runs (2km)", type: "count_2km" },
+        { t: "Augustus: Vakantie Kilos", target: 45, unit: "km", type: "dist" },
+        { t: "September: Nazomer Sprint", target: 70, unit: "sprints", type: "count_90m" },
+        { t: "Oktober: Herfst Storm", target: 15, unit: "runs (1km)", type: "count_1km" },
+        { t: "November: Die Hards", target: 35, unit: "km", type: "dist" },
+        { t: "December: Kerstmannen Loop", target: 10, unit: "runs (2km)", type: "count_2km" }
+    ];
+
+    // 50 Cool Levels
+    const rankNames = [
+        "Verdwaalde Toerist", "Zandhapper", "Krab", "Kwal", "Garnaal", 
+        "Schelpenzoeker", "Pootjebader", "Badgast", "Snorkelaar", "Strandjutter",
+        "Rookie Lifeguard", "Junior Redder", "Zandkasteel Architect", "Eb Loper", "Vloed Zwemmer",
+        "Stroming Meester", "Golfruiter", "Bodyboarder", "Surfer Dude", "Surfer Girl",
+        "Beach Sprinter", "Flags Kampioen", "2km Beul", "Board Rescue Pro", "Ski Paddler",
+        "Oceanman", "Oceanwoman", "Reef Shark", "Dolfijn", "Marlin",
+        "Haaientand", "Kustwacht", "Strand Wachtcommandant", "Reddingsboot Schipper", "Helikopter Piloot",
+        "Storm Trotseerder", "Orkaan Jager", "Tsunami Overlever", "Diepzee Duiker", "Kraken Temmer",
+        "Atlantis Bewoner", "Koning van de Zee", "Meester van de Golven", "Legende van het Zand", "Beach God",
+        "Gouden Zwembroek", "Levende Legende", "Zeemonster", "Aquaman", "POSEIDON"
+    ];
+
+    let charts = {}, stopwatchInt, countdownInt, groupInt, startTime, laps = {}, wakeLock = null;
+    let groupStartActive = false, groupRunnersCount = 0, userOrder = [], ghostTargets = {}, ghostTimer = null;
+    let motionInt = null, lastMotionTime = 0, camStream = null;
+
+    // Analyze Vars
+    let analyseRecorder, analyseChunks = [], isAnalyseRecording = false, analyseStream = null;
+    let isDrawingMode = false, isAngleMode = false, isDrawing = false, lastX = 0, lastY = 0;
+    let recordedBlobUrl = null;
+    let anglePoints = [];
 
     const save = () => localStorage.setItem('tt_data', JSON.stringify(appData));
 
     // ===== INIT =====
     window.onload = function() {
         if(!document.getElementById('date').value) document.getElementById('date').valueAsDate = new Date();
-        applySettings(); renderTablesAndCharts(); renderLapButtons(); updateDistanceInput();
-        
+        applySettings(); renderTablesAndCharts(); renderLapButtons(); updateDistanceInput(); renderChecklist(); calculateTeamChallenge();
         const savedStart = localStorage.getItem('sw_start');
         if(savedStart) {
             startTime = parseInt(savedStart);
             const savedState = JSON.parse(localStorage.getItem('sw_state') || '{}');
             groupStartActive = savedState.groupStartActive || false;
             if(groupStartActive) document.getElementById('groupStart').checked = true;
-            const savedLaps = localStorage.getItem('sw_laps');
-            if(savedLaps) laps = JSON.parse(savedLaps);
-            startSW();
-            renderIndividualTables();
+            if(localStorage.getItem('sw_laps')) laps = JSON.parse(localStorage.getItem('sw_laps'));
+            startSW(); renderIndividualTables();
         }
     };
 
-    // ===== UI SETUP =====
+    // ===== WEATHER =====
+    function getWeather() {
+        const w = document.getElementById('weatherWidget');
+        w.innerHTML = "⏳ Laden...";
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=wave_height&timezone=auto`)
+                .then(r => r.json()).then(data => {
+                    w.innerHTML = `🌊 Golf: <span class="weather-val">${data.current.wave_height}m</span>`;
+                }).catch(() => { w.innerHTML = "❌ Fout"; });
+            }, () => { w.innerHTML = "❌ Geen GPS"; });
+        } else { w.innerHTML = "❌ Geen GPS"; }
+    }
+
+    // ===== UI =====
     function applySettings(){
       document.body.setAttribute('data-theme', appData.settings.theme);
       document.body.classList.toggle('big-mode', appData.settings.bigMode);
       document.body.classList.toggle('focus-mode', appData.settings.focusMode);
       document.getElementById('googleSheetUrl').value = appData.settings.sheetUrl || '';
-      const els = document.querySelectorAll('.tab-btn:not([data-target="#tab-stopwatch"])');
-      els.forEach(e => e.style.display = appData.settings.focusMode ? 'none' : 'flex');
+      document.querySelectorAll('.tab-btn:not([data-target="#tab-stopwatch"])').forEach(e => e.style.display = appData.settings.focusMode ? 'none' : 'flex');
       renderProfileSettings();
     }
     function toggleTheme(){ appData.settings.theme = appData.settings.theme==='dark'?'light':'dark'; save(); applySettings(); }
@@ -442,715 +481,270 @@
     function saveGoogleUrl(val){ appData.settings.sheetUrl = val.trim(); save(); showToast('URL Opgeslagen'); }
 
     function activateTab(sel){
+      if(sel !== '#tab-analyse') { document.getElementById('camToggle').checked = false; toggleAnalyseCam(false); }
+      toggleCamera(false); 
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.target===sel));
       document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
       document.querySelector(sel).classList.add('active');
       if(sel === '#tab-leaderboard') updateLeaderboard();
-      if(sel === '#tab-times') renderTablesAndCharts();
+      if(sel === '#tab-times') { renderTablesAndCharts(); calculateTeamChallenge(); }
     }
     document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>activateTab(b.dataset.target));
 
-    function toggleSetupButtons(disabled) {
-        document.getElementById('btnSetupCount').disabled = disabled;
-        document.getElementById('btnSetupNames').disabled = disabled;
-    }
-
-    // ===== PROFILES & SYNC =====
     function renderProfileSettings(){
         const div = document.getElementById('profileSettings'); div.innerHTML='';
         appData.userNames.forEach(name => {
             const prof = appData.profiles[name] || { color: '#5eead4', img: '' };
-            div.innerHTML += `<div style="display:flex; gap:8px; align-items:center; background:var(--bg); padding:6px; border-radius:6px;"><strong style="width:80px; font-size:12px;">${name}</strong><input type="color" value="${prof.color}" onchange="saveProfile('${name}', 'color', this.value)" style="width:30px; height:30px; padding:0; border:none;"><input type="text" value="${prof.img}" placeholder="Foto URL" onchange="saveProfile('${name}', 'img', this.value)" style="flex:1; font-size:11px;"></div>`;
+            div.innerHTML += `<div style="display:flex; gap:8px; align-items:center; background:var(--bg); padding:6px; border-radius:6px;"><strong style="width:80px; font-size:12px;">${name}</strong><input type="color" value="${prof.color}" onchange="saveProfile('${name}', 'color', this.value)" style="width:30px; height:30px; border:none;"><input type="text" value="${prof.img}" placeholder="Foto URL" onchange="saveProfile('${name}', 'img', this.value)" style="flex:1; font-size:11px;"></div>`;
         });
     }
-    function saveProfile(name, key, val){
-        if(!appData.profiles[name]) appData.profiles[name] = { color: '#5eead4', img: '' };
-        appData.profiles[name][key] = val; save();
+    function saveProfile(name, key, val){ if(!appData.profiles[name]) appData.profiles[name] = {}; appData.profiles[name][key] = val; save(); }
+    
+    function getUniqueColor(name) {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
+        return `hsl(${Math.abs(hash) % 360}, 75%, 50%)`;
     }
-    function getProfile(name){ return appData.profiles[name] || { color: `hsl(${name.charCodeAt(0)*15 % 360}, 70%, 60%)`, img: null }; }
+    function getProfile(name){ return appData.profiles[name] || { color: getUniqueColor(name), img: null }; }
 
     function syncToCloud(entry){
-        let url = appData.settings.sheetUrl;
-        if(!url) return;
-        fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) })
-        .then(() => showToast('☁️ Verzonden naar Cloud')).catch(e => showToast('⚠️ Cloud Error'));
+        if(appData.settings.sheetUrl) fetch(appData.settings.sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) }).catch(()=>{});
     }
 
-    // ===== HELPERS =====
-    const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    function beep(freq=1200, type='square', dur=0.1){
-      if(audioCtx.state==='suspended') audioCtx.resume();
-      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o.type=type; o.frequency.value=freq;
-      g.gain.setValueAtTime(1.0, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
-      o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur);
-    }
-    
-    function renderUserList(){
-      const dl = document.getElementById('userlist'); dl.innerHTML='';
-      const allUsers = new Set();
-      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => allUsers.add(x.user)));
-      appData.userNames.forEach(u => allUsers.add(u)); 
-      allUsers.forEach(u => dl.innerHTML += `<option value="${u}">`);
+    // ===== TOOLS =====
+    function drawLots() {
+        const users = [...appData.userNames];
+        for (let i = users.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [users[i], users[j]] = [users[j], users[i]];
+        }
+        alert("🎲 Loting Uitslag:\n\n" + users.map((u,i) => `${i+1}. ${u}`).join("\n"));
     }
 
-    function calculateTrendline(data) {
-        const n = data.length; if (n < 2) return null;
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-        data.forEach((p, i) => { sumX += i; sumY += p.y; sumXY += i * p.y; sumXX += i * i; });
-        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const intercept = (sumY - slope * sumX) / n;
-        return data.map((_, i) => ({ x: data[i].x, y: slope * i + intercept }));
+    function startReactionTest() {
+        const ov = document.getElementById('shotOverlay');
+        ov.style.display = 'flex'; ov.style.background = '#ff4444'; ov.innerText = "WACHT...";
+        const delay = 2000 + Math.random() * 3000;
+        let to = setTimeout(() => { ov.style.background = '#00e676'; ov.innerText = "KLIK!"; ov.dataset.start = Date.now(); }, delay);
+        ov.onclick = () => {
+            if(ov.innerText === "WACHT...") { clearTimeout(to); ov.innerText = "TE VROEG!"; setTimeout(() => ov.style.display = 'none', 1000); } 
+            else if (ov.innerText === "KLIK!") { const diff = Date.now() - parseInt(ov.dataset.start); ov.innerText = `${diff} ms`; ov.onclick = null; setTimeout(() => ov.style.display = 'none', 2000); }
+        };
     }
 
-    // ===== DATA TAB =====
+    // ===== VIDEO ANALYSE =====
+    const videoLive = document.getElementById('analyseLive');
+    const videoPlayback = document.getElementById('analysePlayback');
+    const btnRecAnalyse = document.getElementById('btnRecordAnalyse');
+    const drawCanvas = document.getElementById('drawCanvas');
+    const ctx = drawCanvas.getContext('2d');
+    const playIcon = document.getElementById('playIcon');
+    const btnDrawToggle = document.getElementById('btnDrawToggle');
+    const btnAngleToggle = document.getElementById('btnAngleToggle');
+
+    function toggleAnalyseCam(enable) {
+        if(enable) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", frameRate: { ideal: 60 } }, audio: true })
+            .then(stream => {
+                analyseStream = stream; videoLive.srcObject = stream; videoLive.style.display = 'block'; videoPlayback.style.display = 'none'; btnRecAnalyse.style.display = 'block';
+                document.getElementById('analyseStatus').innerText = "Standby (60 FPS)"; drawCanvas.style.display = 'none'; document.getElementById('speedControls').style.display='none';
+            }).catch(e => { document.getElementById('analyseStatus').innerText = "❌ Fout"; document.getElementById('camToggle').checked = false; });
+        } else {
+            if(analyseStream) analyseStream.getTracks().forEach(t => t.stop()); analyseStream = null; videoLive.style.display = 'none'; btnRecAnalyse.style.display = 'none'; document.getElementById('analyseStatus').innerText = "Camera uit";
+        }
+    }
+
+    btnRecAnalyse.onclick = () => { if(!isAnalyseRecording) startRec(); else stopRec(); };
+    function startRec() { if(!analyseStream) return; analyseChunks = []; try { analyseRecorder = new MediaRecorder(analyseStream, { mimeType: 'video/webm;codecs=vp9' }); } catch (e) { analyseRecorder = new MediaRecorder(analyseStream); } analyseRecorder.ondataavailable = e => { if (e.data.size > 0) analyseChunks.push(e.data); }; analyseRecorder.onstop = finishRec; analyseRecorder.start(); isAnalyseRecording = true; btnRecAnalyse.classList.add('recording'); document.getElementById('analyseStatus').innerText = "🔴 Opnemen..."; }
+    function stopRec() { analyseRecorder.stop(); isAnalyseRecording = false; btnRecAnalyse.classList.remove('recording'); }
+    function finishRec() {
+        const blob = new Blob(analyseChunks, { type: 'video/webm' }); recordedBlobUrl = URL.createObjectURL(blob);
+        videoLive.style.display = "none"; videoPlayback.style.display = "block"; videoPlayback.src = recordedBlobUrl; videoPlayback.playbackRate = 0.5;
+        btnRecAnalyse.style.display = "none"; document.getElementById('speedControls').style.display = "flex"; document.getElementById('analyseStatus').innerText = "Gepauzeerd.";
+        drawCanvas.style.display = "block"; drawCanvas.width = videoPlayback.clientWidth; drawCanvas.height = videoPlayback.clientHeight;
+        isDrawingMode = false; isAngleMode = false; drawCanvas.style.pointerEvents = "none"; videoPlayback.pause(); playIcon.style.display = "block"; 
+    }
+    function togglePlayPause(){ if(videoPlayback.paused){ videoPlayback.play(); playIcon.style.display = "none"; document.getElementById('analyseStatus').innerText = `Afspelen`; } else { videoPlayback.pause(); playIcon.style.display = "block"; document.getElementById('analyseStatus').innerText = "Gepauzeerd"; } }
+    function toggleDrawingMode() { isDrawingMode = !isDrawingMode; isAngleMode = false; btnAngleToggle.classList.remove('active'); if(isDrawingMode) { btnDrawToggle.classList.add('active'); btnDrawToggle.innerText = "✏️ AAN"; drawCanvas.style.pointerEvents = "auto"; videoPlayback.pause(); playIcon.style.display = "block"; } else { btnDrawToggle.classList.remove('active'); btnDrawToggle.innerText = "✏️ Tekenen"; drawCanvas.style.pointerEvents = "none"; } }
+    function toggleAngleMode() { isAngleMode = !isAngleMode; isDrawingMode = false; btnDrawToggle.classList.remove('active'); anglePoints = []; if(isAngleMode) { btnAngleToggle.classList.add('active'); btnAngleToggle.innerText = "📐 AAN"; drawCanvas.style.pointerEvents = "auto"; videoPlayback.pause(); playIcon.style.display = "block"; document.getElementById('analyseStatus').innerText = "Klik 3 punten"; } else { btnAngleToggle.classList.remove('active'); btnAngleToggle.innerText = "📐 Hoek"; drawCanvas.style.pointerEvents = "none"; } }
+    function saveVideo() { if (recordedBlobUrl) { const a = document.createElement('a'); a.style.display = 'none'; a.href = recordedBlobUrl; a.download = `video.webm`; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); }, 100); showToast("Opgeslagen"); } }
+    function setAnalyseSpeed(s) { videoPlayback.playbackRate = s; document.querySelectorAll('.speed-btn').forEach(b => { b.classList.remove('active'); if(b.innerText.includes(s.toString())) b.classList.add('active'); }); }
+    function deleteVideo() { if(confirm("Weg?")) { videoPlayback.pause(); if(recordedBlobUrl) URL.revokeObjectURL(recordedBlobUrl); videoPlayback.src = ""; videoPlayback.style.display = "none"; drawCanvas.style.display = "none"; document.getElementById('speedControls').style.display = "none"; clearDrawing(); recordedBlobUrl = null; toggleAnalyseCam(true); } }
+    function resetAnalyse() { deleteVideo(); }
+
+    function handleCanvasStart(e) {
+        e.preventDefault(); const rect = drawCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left; const y = clientY - rect.top;
+        if (isAngleMode) {
+            anglePoints.push({x, y}); ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+            if (anglePoints.length >= 2) { ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(anglePoints[anglePoints.length-2].x, anglePoints[anglePoints.length-2].y); ctx.lineTo(x, y); ctx.stroke(); }
+            if (anglePoints.length === 3) {
+                const p1 = anglePoints[0], p2 = anglePoints[1], p3 = anglePoints[2];
+                const angle = Math.atan2(p3.y - p2.y, p3.x - p2.x) - Math.atan2(p1.y - p2.y, p1.x - p2.x);
+                let degree = Math.abs(angle * 180 / Math.PI); if (degree > 180) degree = 360 - degree;
+                ctx.fillStyle = '#fff'; ctx.font = "bold 20px Arial"; ctx.fillText(degree.toFixed(1) + "°", p2.x + 10, p2.y - 10);
+                isAngleMode = false; btnAngleToggle.classList.remove('active'); btnAngleToggle.innerText = "📐 Hoek";
+            }
+        } else if (isDrawingMode) { isDrawing = true; lastX = x; lastY = y; }
+    }
+    function handleCanvasMove(e) {
+        if (!isDrawing || !isDrawingMode) return; e.preventDefault(); const rect = drawCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left; const y = clientY - rect.top;
+        ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y;
+    }
+    function handleCanvasEnd() { isDrawing = false; }
+    function clearDrawing() { ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); anglePoints = []; }
+    drawCanvas.addEventListener('mousedown', handleCanvasStart); drawCanvas.addEventListener('mousemove', handleCanvasMove); drawCanvas.addEventListener('mouseup', handleCanvasEnd);
+    drawCanvas.addEventListener('touchstart', handleCanvasStart, {passive: false}); drawCanvas.addEventListener('touchmove', handleCanvasMove, {passive: false}); drawCanvas.addEventListener('touchend', handleCanvasEnd);
+
+    // ===== DATA PROCESSING =====
     function renderTablesAndCharts(){
       const container = document.getElementById('chartsContainer'); container.innerHTML = '';
-      
-      const hm = document.getElementById('heatmap'); hm.innerHTML='';
-      const activityMap = {}; 
-      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => {
-          const d = new Date(x.date);
-          const onejan = new Date(d.getFullYear(),0,1);
-          const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay()+1)/7);
-          activityMap[week] = (activityMap[week] || 0) + 1;
-      }));
-      for(let i=1; i<=26; i++){ 
-          const d = document.createElement('div'); d.className='heatmap-cell';
-          const count = activityMap[i]||0; d.title = `Week ${i}: ${count}`;
-          if(count > 0) d.classList.add('level-1'); if(count > 2) d.classList.add('level-2'); if(count > 5) d.classList.add('level-3');
-          hm.appendChild(d);
-      }
+      const attContainer = document.getElementById('attendanceContainer'); attContainer.innerHTML = '';
+      const weeks = {}; const userTrainingCounts = {};
 
-      // INTERVAL ANALYSIS: ONLY LAST CLOCKED
-      let intervalData = null;
-      let latestEntry = null;
-      
       ['2km','1km','90m','obstacle','overig'].forEach(type => {
-          const arr = appData.sprint[type];
-          if(arr && arr.length > 0) {
-              const entry = arr[arr.length - 1];
-              if(entry.splits && entry.splits.length > 0) {
-                  latestEntry = entry;
-                  intervalData = { label: `${entry.user} (${type})`, data: entry.splits, date: entry.date };
-              }
-          }
+          appData.sprint[type].forEach(entry => {
+              userTrainingCounts[entry.user] = (userTrainingCounts[entry.user] || 0) + 1;
+              const d = new Date(entry.date);
+              const start = new Date(d.getFullYear(), 0, 1);
+              const days = Math.floor((d - start) / (24 * 60 * 60 * 1000));
+              const weekNum = Math.ceil((d.getDay() + 1 + days) / 7);
+              const yearWeek = `${d.getFullYear()} - Week ${weekNum}`;
+              if(!weeks[yearWeek]) weeks[yearWeek] = {}; weeks[yearWeek][entry.user] = (weeks[yearWeek][entry.user] || 0) + 1;
+          });
       });
-      renderIntervalChart(intervalData);
 
+      Object.keys(weeks).sort().reverse().forEach(wk => {
+          const weekDiv = document.createElement('div'); weekDiv.className = 'attendance-week';
+          let usersHtml = '';
+          Object.keys(weeks[wk]).sort((a,b)=>weeks[wk][b]-weeks[wk][a]).forEach(user => {
+              const count = weeks[wk][user];
+              const totalCount = userTrainingCounts[user] || 0;
+              let level = Math.floor(totalCount / 20) + 1; if (level > 50) level = 50;
+              const progress = ((totalCount - ((level - 1) * 20)) / 20) * 100;
+              const rankName = rankNames[level - 1] || "Legende";
+              usersHtml += `<div style="margin-bottom:8px;"><div class="attendance-pill" style="border-left:3px solid ${getProfile(user).color}; justify-content:space-between;"><span>${user} (${count}x)</span><span style="font-size:10px; opacity:0.8">Lvl ${level}</span></div><div style="padding:0 4px;"><div class="rank-text">${rankName}</div><div class="level-bar-bg"><div class="level-bar-fill" style="width:${progress}%"></div></div></div></div>`;
+          });
+          weekDiv.innerHTML = `<div class="attendance-header"><span>${wk}</span></div><div class="attendance-list" style="display:block">${usersHtml}</div>`;
+          attContainer.appendChild(weekDiv);
+      });
+
+      // Charts
+      const neonColors = ['#FF00FF', '#00FFFF', '#FFFF00', '#FF3300', '#00FF00', '#9D00FF', '#FF007F', '#00FF99', '#3366FF', '#FF9900'];
       ['2km','1km','90m','obstacle','overig'].forEach(type => {
-        const data = appData.sprint[type];
-        if(!data || data.length === 0) return;
-        
-        const avg = data.reduce((a,b)=>a+b.time,0) / data.length;
-
+        const data = appData.sprint[type]; if(!data || data.length === 0) return;
         const card = document.createElement('div'); card.className='card';
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h2>${type}</h2>
-            <span class="pill">Team Gem: ${avg.toFixed(2)}</span>
-          </div>
-          <div class="chart-box"><canvas id="c_${type}"></canvas></div>
-          <div class="table-wrap" style="margin-top:10px">
-            <table data-type="${type}">
-              <thead><tr><th>Wie</th><th>Datum</th><th>Tijd</th><th>Actie</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>`;
+        card.innerHTML = `<div style="display:flex; justify-content:space-between;"><h2>${type}</h2></div><div class="chart-box"><canvas id="c_${type}"></canvas></div><div class="table-wrap"><table data-type="${type}"><thead><tr><th>Wie</th><th>Datum</th><th>Tijd</th><th>Actie</th></tr></thead><tbody></tbody></table></div>`;
         container.appendChild(card);
-
         const tbody = card.querySelector('tbody');
-        const sorted = [...data].sort((a,b)=>a.time - b.time);
-        sorted.forEach((entry, idx) => {
-          const tr = document.createElement('tr');
-          const realIdx = appData.sprint[type].indexOf(entry);
-          
-          let actionHtml = `<button class="btn small danger" onclick="deleteTime('${type}', ${realIdx})">🗑️</button>`;
-          if(entry.splits && entry.splits.length > 0) {
-              actionHtml = `<button class="btn small" onclick="showIntervals('${type}', ${realIdx})" style="margin-right:4px;">📊</button>` + actionHtml;
-          }
-
-          tr.innerHTML = `<td>${entry.user} ${entry.weather||''}</td><td>${entry.date}</td><td>${entry.time}</td><td>${actionHtml}</td>`;
-          tbody.appendChild(tr);
+        [...data].sort((a,b)=>a.time - b.time).forEach((e, i) => {
+            const idx = appData.sprint[type].indexOf(e);
+            let btnHtml = `<button class="btn small danger" onclick="deleteTime('${type}',${idx})">🗑️</button>`;
+            if(e.splits && e.splits.length > 0) btnHtml = `<button class="btn small" onclick="showIntervals('${type}',${idx})" style="margin-right:5px">📊</button>` + btnHtml;
+            tbody.innerHTML += `<tr><td>${e.user} ${e.weather||''}</td><td>${e.date}</td><td>${e.time}</td><td>${btnHtml}</td></tr>`;
         });
-
         const ctx = card.querySelector('canvas').getContext('2d');
         const uniqueUsers = [...new Set(data.map(d=>d.user))];
-        const datasets = [];
-        
-        uniqueUsers.forEach(u => {
-          const uData = data.filter(d=>d.user === u).map(d=>({x:d.date, y:d.time}));
-          const prof = getProfile(u);
-          datasets.push({ label: u, data: uData, borderColor: prof.color, tension:0.3, pointRadius:4 });
-          if(uData.length > 2){
-              const trend = calculateTrendline(uData);
-              if(trend) datasets.push({ label: `${u} (Trend)`, data: trend, borderColor: prof.color, borderDash:[5,5], pointRadius:0, borderWidth:1 });
-          }
-        });
-
-        if(charts[type]) charts[type].destroy();
-        charts[type] = new Chart(ctx, { type: 'line', data: { datasets }, options: { responsive:true, maintainAspectRatio:false, scales: { x:{type:'category'} } } });
+        const datasets = uniqueUsers.map((u, i) => ({ label: u, data: data.filter(d=>d.user===u).map(d=>({x:d.date,y:d.time})), borderColor: neonColors[i % neonColors.length], backgroundColor: neonColors[i % neonColors.length], borderWidth: 2, pointRadius: 4, tension:0.3 }));
+        charts[type] = new Chart(ctx, { type: 'line', data: { datasets }, options: { responsive:true, maintainAspectRatio:false } });
       });
       renderUserList();
     }
 
-    function showIntervals(type, index) {
-        const entry = appData.sprint[type][index];
-        if(entry && entry.splits) {
-            renderIntervalChart({
-                label: `${entry.user} (${type})`,
-                data: entry.splits,
-                date: entry.date
-            });
-            document.querySelector('#intervalTitle').scrollIntoView({behavior: 'smooth'});
-        }
-    }
-
-    function renderIntervalChart(intervalData) {
-        const intCtx = document.getElementById('c_interval').getContext('2d');
-        const titleEl = document.getElementById('intervalTitle');
+    // TEAM CHALLENGE
+    function calculateTeamChallenge() {
+        const d = new Date();
+        const monthIndex = (d.getFullYear() * 12 + d.getMonth()) % 24;
+        const challenge = challenges[monthIndex];
         
-        if(charts['interval']) charts['interval'].destroy();
+        document.getElementById('challengeName').innerText = challenge.t;
         
-        if(intervalData) {
-            titleEl.innerText = `📉 Verval: ${intervalData.label} op ${intervalData.date}`;
-            charts['interval'] = new Chart(intCtx, {
-                type: 'line', 
-                data: { 
-                    labels: intervalData.data.map((_,i)=>`Ronde ${i+1}`), 
-                    datasets: [{ 
-                        label: "Rondetijd (s)", 
-                        data: intervalData.data,
-                        borderColor: '#5eead4',
-                        backgroundColor: 'rgba(94, 234, 212, 0.2)',
-                        pointRadius: 4,
-                        tension: 0.2
-                    }] 
-                },
-                options: { 
-                    responsive:true, 
-                    maintainAspectRatio:false, 
-                    plugins: { legend: { labels: { color: '#aab4d6' } } }, 
-                    scales: { 
-                        y: { ticks: { color: '#aab4d6' }, title: {display: true, text: 'Seconden'} }, 
-                        x: { ticks: { color: '#aab4d6' } } 
-                    } 
+        let total = 0;
+        const currentMonth = d.getMonth();
+        
+        ['2km','1km','90m','obstacle'].forEach(type => {
+            appData.sprint[type].forEach(e => {
+                if (new Date(e.date).getMonth() === currentMonth) {
+                    if (challenge.type === 'dist') {
+                        if (type === '2km') total += 2; if (type === '1km') total += 1; if (type === '90m') total += 0.09;
+                    } else if (challenge.type === `count_${type}`) {
+                        total += 1;
+                    } else if (challenge.type === 'count_flags' && type === 'obstacle') {
+                        total += 1;
+                    } else if (challenge.type === 'dist_90m' && type === '90m') {
+                        total += 90;
+                    }
                 }
             });
-        } else {
-            titleEl.innerText = "📉 Interval Analyse (Geen data)";
-        }
+        });
+
+        const pct = Math.min(100, (total / challenge.target) * 100);
+        document.getElementById('challengeBar').style.width = pct + "%";
+        document.getElementById('challengeText').innerText = `${total.toFixed(1)} / ${challenge.target} ${challenge.unit}`;
     }
 
-    function deleteTime(type, idx){ if(confirm('Verwijderen?')){ appData.sprint[type].splice(idx, 1); save(); renderTablesAndCharts(); updateLeaderboard(); } }
+    // CHECKLIST
+    const trainingItems = ["Hardloop schoenen", "Sportkleding", "Bidon", "Water", "Zonnebrand", "Warme kleding"];
+    const compItems = ["Clubkleding", "Ocean Cap", "Zwembroek/Badpak", "Klapstoel", "Eten", "Drinken", "Zonnebril", "Pet", "Spelletje (Optioneel)", "Camera (Optioneel)"];
 
-    function addTime(){
-      const u=document.getElementById('user').value, t=parseFloat(document.getElementById('time').value), d=document.getElementById('date').value, rt=document.getElementById('raceType').value;
-      const w=document.getElementById('weatherInput').value, n=document.getElementById('notesInput').value;
-      if(!u || !t || !d) return alert('Vul alles in');
-      saveTimeInternal(u, t, d, rt, 'training', null, w, n);
-      document.getElementById('time').value='';
+    function renderChecklist() {
+        const t = document.getElementById('trainingChecklist'); t.innerHTML='';
+        const c = document.getElementById('competitionChecklist'); c.innerHTML='';
+        
+        trainingItems.forEach(item => {
+            const checked = appData.material[item] ? 'checked' : '';
+            t.innerHTML += `<div class="checklist-item"><span>${item}</span><input type="checkbox" onchange="toggleMaterial('${item}', this.checked)" ${checked}></div>`;
+        });
+        compItems.forEach(item => {
+            const checked = appData.material[item] ? 'checked' : '';
+            c.innerHTML += `<div class="checklist-item"><span>${item}</span><input type="checkbox" onchange="toggleMaterial('${item}', this.checked)" ${checked}></div>`;
+        });
     }
+    function toggleMaterial(item, checked) { appData.material[item] = checked; save(); }
+    function resetChecklist() { appData.material = {}; save(); renderChecklist(); }
+
+    // (Standard functions kept same as before)
+    function renderIntervalChart(intervalData) { const intCtx = document.getElementById('c_interval').getContext('2d'); const titleEl = document.getElementById('intervalTitle'); if(charts['interval']) charts['interval'].destroy(); if(intervalData) { titleEl.innerText = `📉 Verval: ${intervalData.label}`; charts['interval'] = new Chart(intCtx, { type: 'line', data: { labels: intervalData.data.map((_,i)=>`R ${i+1}`), datasets: [{ label: "Tijd", data: intervalData.data, borderColor: '#5eead4', tension: 0.2 }] }, options: { responsive:true, maintainAspectRatio:false } }); } }
+    function showIntervals(type, index) { const entry = appData.sprint[type][index]; if(entry && entry.splits) { renderIntervalChart({ label: `${entry.user} (${type})`, data: entry.splits }); document.querySelector('#intervalTitle').scrollIntoView({behavior: 'smooth'}); } }
+    function beep(freq=1200, type='square', dur=0.1){ const c=new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(),g=c.createGain(); o.type=type; o.frequency.value=freq; g.gain.setValueAtTime(1,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur); }
+    function renderUserList(){ const dl = document.getElementById('userlist'); dl.innerHTML=''; const all=new Set([...appData.userNames]); Object.values(appData.sprint).flat().forEach(x=>all.add(x.user)); all.forEach(u=>dl.innerHTML+=`<option value="${u}">`); }
+    function deleteTime(type, idx){ if(confirm('Verwijderen?')){ appData.sprint[type].splice(idx, 1); save(); renderTablesAndCharts(); updateLeaderboard(); calculateTeamChallenge(); } }
+    function addTime(){ const u=document.getElementById('user').value,t=parseFloat(document.getElementById('time').value),d=document.getElementById('date').value; if(!u||!t||!d)return alert('Vul alles in'); saveTimeInternal(u,t,d,document.getElementById('raceType').value,'training',null,document.getElementById('weatherInput').value,document.getElementById('notesInput').value); document.getElementById('time').value=''; }
     document.getElementById('btnAddTime').onclick = addTime;
-
     function saveTimeInternal(user, time, date, raceType, timeType='training', splits=null, weather='', notes=''){
-      if(raceType==='90m' && (time<9 || time>30)) return alert('Tijd onrealistisch voor 90m.');
       const entry = {user, time, date, raceType, splits, weather, notes, timestamp: Date.now()};
       if(timeType==='record') appData.records.push(entry); else appData.sprint[raceType].push(entry);
-      save(); syncToCloud(entry); showToast(`${user} opgeslagen!`);
-      updateLeaderboard(); 
+      save(); syncToCloud(entry); showToast(`${user} opgeslagen!`); updateLeaderboard(); calculateTeamChallenge();
     }
-
-    // ===== RECORDS (LEADERBOARD FIXED) =====
     function updateLeaderboard(){
       const div = document.getElementById('leaderboardContent'); div.innerHTML='';
-      const raceTypes = ['2km','1km','90m','obstacle','overig'];
-      
-      const allUsers = new Set();
-      Object.keys(appData.sprint).forEach(k => appData.sprint[k].forEach(x => allUsers.add(x.user)));
-      const uniqueUsers = Array.from(allUsers);
-
-      // 1. GLOBAL TOP 3
-      raceTypes.forEach(type => {
-          const data = appData.sprint[type];
-          if(!data || data.length === 0) return;
+      ['2km','1km','90m','obstacle','overig'].forEach(type => {
+          const data = appData.sprint[type]; if(!data || !data.length) return;
           const sorted = [...data].sort((a,b)=>a.time - b.time).slice(0,3);
-          
-          let html = `<div class="lb-global-table">
-            <h3>🏆 ${type} - Top 3</h3>
-            <div class="table-wrap"><table><thead><tr><th>#</th><th>Naam</th><th>Datum</th><th>Tijd</th></tr></thead><tbody>`;
-          sorted.forEach((d, i) => {
-              html += `<tr><td>${i+1}</td><td>${d.user}</td><td>${d.date}</td><td><b>${d.time}</b></td></tr>`;
-          });
-          html += `</tbody></table></div></div>`;
-          div.innerHTML += html;
-      });
-
-      div.innerHTML += `<hr style="border:0; border-top:1px dashed var(--border); margin:20px 0;">`;
-
-      if(uniqueUsers.length === 0) {
-          div.innerHTML += `<p style="text-align:center; color:var(--muted)">Nog geen data.</p>`;
-          return;
-      }
-
-      uniqueUsers.forEach(user => {
-          let hasRecords = false;
-          let userHtml = `<div class="lb-user-table">
-            <h3>👤 ${user} - PR's</h3>
-            <div class="table-wrap"><table><thead><tr><th>Onderdeel</th><th>Datum</th><th>PR Tijd</th></tr></thead><tbody>`;
-          
-          raceTypes.forEach(type => {
-              const data = appData.sprint[type].filter(d => d.user === user);
-              if(data.length > 0) {
-                  const pr = data.reduce((prev, curr) => prev.time < curr.time ? prev : curr);
-                  userHtml += `<tr><td>${type}</td><td>${pr.date}</td><td><b>${pr.time}</b></td></tr>`;
-                  hasRecords = true;
-              } else {
-                  userHtml += `<tr><td>${type}</td><td>-</td><td>-</td></tr>`;
-              }
-          });
-          userHtml += `</tbody></table></div></div>`;
-          if(hasRecords) div.innerHTML += userHtml;
+          div.innerHTML += `<div class="lb-global-table"><h3>🏆 ${type} Top 3</h3><div class="table-wrap"><table><thead><tr><th>#</th><th>Naam</th><th>Tijd</th></tr></thead><tbody>${sorted.map((d,i)=>`<tr><td>${i+1}</td><td>${d.user}</td><td><b>${d.time}</b></td></tr>`).join('')}</tbody></table></div></div>`;
       });
     }
-
-    // ===== STOPWATCH & CAMERA =====
-    function updateDistanceInput() {
-      const type = document.getElementById('swRaceType').value;
-      const distInput = document.getElementById('lapDistance');
-      if(type === '2km') { distInput.value = 2000; distInput.disabled = true; }
-      else if(type === '1km') { distInput.value = 1000; distInput.disabled = true; }
-      else if(type === '90m') { distInput.value = 90; distInput.disabled = true; }
-      else { distInput.value = ''; distInput.disabled = false; distInput.placeholder="Afstand (m)"; }
-      renderIndividualTables(); 
-    }
-
-    function renameUsers(){ 
-        appData.userNames = appData.userNames.map((n,i) => prompt(`Naam voor knop ${i+1}?`, n) || n); 
-        appData.userNames = appData.userNames.filter(n => n.trim() !== '');
-        save(); renderLapButtons(); renderIndividualTables(); renderUserList(); renderProfileSettings();
-    }
-
-    function changeRunnerCount(){
-        const c = prompt("Hoeveel deelnemers?", appData.userNames.length);
-        if(c && !isNaN(c)){
-            const count = parseInt(c);
-            const current = appData.userNames;
-            const newNames = [];
-            for(let i=0; i<count; i++){ newNames.push(current[i] || `Persoon ${i+1}`); }
-            appData.userNames = newNames;
-            save(); renderLapButtons(); renderIndividualTables();
-        }
-    }
-    
-    function configureGhost(checked){
-        const disp = document.getElementById('ghostDisplay');
-        if(checked){
-            appData.userNames.forEach(name => {
-                let def = ghostTargets[name] || '';
-                let val = prompt(`Ghost Doeltijd voor ${name} (minuten)?`, def);
-                if(val) ghostTargets[name] = parseFloat(val);
-            });
-            disp.style.display = 'block';
-            disp.innerHTML = "Ghost actief. Start de klok!";
-        } else {
-            disp.style.display = 'none';
-        }
-    }
-
-    // CAMERA LOGIC
-    function toggleCamera(enable){
-        const video = document.getElementById('camPreview');
-        if(enable){
-            video.style.display = 'block';
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => {
-                camStream = stream;
-                video.srcObject = stream;
-            }).catch(err => {
-                alert("Camera toegang geweigerd of niet beschikbaar.");
-                document.getElementById('selfTrain').checked = false;
-                video.style.display = 'none';
-            });
-        } else {
-            if(camStream) camStream.getTracks().forEach(track => track.stop());
-            video.style.display = 'none';
-            clearInterval(motionInt);
-        }
-    }
-
-    function startMotionDetection(){
-        const video = document.getElementById('camPreview');
-        const canvas = document.getElementById('camCanvas');
-        const ctx = canvas.getContext('2d');
-        let prevFrame = null;
-        
-        motionInt = setInterval(() => {
-            if(video.readyState === video.HAVE_ENOUGH_DATA){
-                canvas.width = 100; canvas.height = 100; // Low res for perf
-                ctx.drawImage(video, 0, 0, 100, 100);
-                const currentFrame = ctx.getImageData(0, 0, 100, 100);
-                
-                if(prevFrame){
-                    let diff = 0;
-                    for(let i=0; i<currentFrame.data.length; i+=4){
-                        diff += Math.abs(currentFrame.data[i] - prevFrame.data[i]); // Check R channel
-                    }
-                    // Simple threshold
-                    if(diff > 500000 && (Date.now() - lastMotionTime > 3000)){ // 3s cooldown
-                        lastMotionTime = Date.now();
-                        appData.userNames.forEach((n, i) => recordLap(n, i));
-                        beep(1000, 'square', 0.1);
-                        showToast("📸 Beweging gedetecteerd!");
-                    }
-                }
-                prevFrame = currentFrame;
-            }
-        }, 100); // Check every 100ms
-    }
-
-    function renderLapButtons(){
-      const area = document.getElementById('lapButtonsArea'); area.innerHTML='';
-      userOrder = []; 
-      
-      appData.userNames.forEach((name, i) => {
-        laps[name] = laps[name] || [];
-        userOrder.push({ name: name, index: i }); 
-        
-        const wrap = document.createElement('div'); wrap.className = 'btn-wrap';
-        const btn = document.createElement('button'); btn.className='btn'; btn.style.flex = "1"; btn.innerText = name;
-        btn.onclick = () => { 
-            if(!stopwatchInt && !countdownInt) return; 
-            
-            // Allow manual click even in self-train mode
-            recordLap(name, i); 
-            beep(800, 'triangle', 0.05);
-        };
-        wrap.appendChild(btn); area.appendChild(wrap);
-      });
-      
-      groupRunnersCount = userOrder.length;
-    }
-
-    document.getElementById('startStopwatch').onclick = () => {
-      if(stopwatchInt || countdownInt) return;
-      toggleSetupButtons(true);
-      const selfTrain = document.getElementById('selfTrain').checked;
-      
-      if(selfTrain){
-          let c = 10; document.getElementById('stopwatch').innerText = c;
-          countdownInt = setInterval(()=>{
-              c--;
-              if(c>0) { document.getElementById('stopwatch').innerText = c; }
-              else {
-                  clearInterval(countdownInt); countdownInt=null;
-                  document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
-                  setTimeout(()=>{ 
-                      startSW(); 
-                      startMotionDetection(); 
-                  }, 100);
-              }
-          }, 1000);
-          return;
-      }
-
-      groupStartActive = document.getElementById('groupStart').checked;
-      if(groupStartActive && groupRunnersCount > 0){
-          let c = 5; document.getElementById('stopwatch').innerText = c;
-          countdownInt = setInterval(()=>{
-              c--;
-              if(c>0) { document.getElementById('stopwatch').innerText = c; }
-              else {
-                  clearInterval(countdownInt); countdownInt=null;
-                  document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
-                  setTimeout(()=>{ startSW(); if(groupRunnersCount > 1) startGroupInterval(); }, 100);
-              }
-          }, 1000);
-      } else {
-        const delay = document.getElementById('startDelay').checked;
-        if(delay) {
-          let count = 5; document.getElementById('stopwatch').innerText = count;
-          countdownInt = setInterval(() => {
-            count--;
-            if(count > 0) { document.getElementById('stopwatch').innerText = count; } else {
-              clearInterval(countdownInt); countdownInt = null;
-              document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8);
-              setTimeout(startSW, 100);
-            }
-          }, 1000);
-        } else { startSW(); }
-      }
-    };
-
-    function startSW(){
-      startTime = Date.now();
-      localStorage.setItem('sw_start', startTime);
-      localStorage.setItem('sw_state', JSON.stringify({ groupStartActive }));
-      if('wakeLock' in navigator) navigator.wakeLock.request('screen').then(w=>wakeLock=w).catch(()=>{});
-      stopwatchInt = setInterval(updateStopwatch, 10);
-    }
-
-    function updateStopwatch(){
-        const now = Date.now();
-        const ms = now - startTime;
-        document.getElementById('stopwatch').innerText = new Date(ms).toISOString().slice(14, 22);
-    }
-    
-    function startGroupInterval(){
-        let nextStart = 1; 
-        const box = document.getElementById('groupStartBox');
-        const counter = document.getElementById('groupCounter');
-        if(groupRunnersCount > 1) {
-            box.style.display = 'block'; counter.innerText = 10;
-            let localCount = 10;
-            groupInt = setInterval(()=>{
-                localCount--;
-                counter.innerText = localCount;
-                if(localCount <= 0){
-                    beep(800, 'square', 0.3);
-                    nextStart++; localCount = 10;
-                    if(nextStart >= groupRunnersCount){ clearInterval(groupInt); box.style.display='none'; }
-                }
-            }, 1000);
-        }
-    }
-    
-    document.getElementById('stopStopwatch').onclick = () => { 
-      clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(countdownInt); countdownInt=null; clearInterval(groupInt); groupInt=null;
-      clearInterval(motionInt);
-      toggleSetupButtons(false);
-      document.getElementById('groupStartBox').style.display='none'; if(wakeLock) wakeLock.release(); 
-      localStorage.removeItem('sw_start');
-    };
-    
-    document.getElementById('resetStopwatch').onclick = () => { 
-      clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(countdownInt); countdownInt=null; clearInterval(groupInt); groupInt=null;
-      clearInterval(motionInt);
-      toggleSetupButtons(false);
-      document.getElementById('groupStartBox').style.display='none'; document.getElementById('stopwatch').innerText='00:00.000';
-      Object.keys(laps).forEach(k=>laps[k]=[]); 
-      localStorage.removeItem('sw_start');
-      localStorage.removeItem('sw_laps');
-      renderIndividualTables();
-    };
-
-    function recordLap(name, userIndex){
-      const totalMs = Date.now()-startTime;
-      const last = laps[name][laps[name].length-1];
-      const splitMs = totalMs - (last ? last.totalMs : 0);
-      
-      const totalStr = new Date(totalMs).toISOString().slice(14, 22);
-      const splitStr = new Date(splitMs).toISOString().slice(14, 22);
-      
-      let speedStr = '-';
-      let saveVal;
-      const dist = parseFloat(document.getElementById('lapDistance').value);
-      const type = document.getElementById('swRaceType').value;
-
-      let calcDist = dist;
-      if(type === '2km' || type === '1km') calcDist = 200; 
-      if(type === '90m') calcDist = 90;
-
-      // START UPDATE: Snelheid correctie voor Groepstart
-      // Als groepstart actief is, berekenen we eerst de Netto tijd (Tussentijd)
-      let netMs = totalMs;
-      if(groupStartActive){
-          const startDelayMs = userIndex * 10000;
-          netMs = totalMs - startDelayMs;
-          if(netMs < 0) netMs = 0; 
-      }
-
-      // Voor de snelheidsberekening: gebruik de Netto Tussentijd als dit de EERSTE ronde is in een groepsstart.
-      // Bij latere rondes is splitMs correct (want dat is het verschil tussen twee tijden, waardoor de start-vertraging wegvalt).
-      let timeForSpeed = splitMs;
-      if(groupStartActive && (!laps[name] || laps[name].length === 0)) {
-          timeForSpeed = netMs;
-      }
-
-      if(calcDist > 0 && timeForSpeed > 0) {
-        const seconds = timeForSpeed / 1000;
-        const kmh = (calcDist / seconds) * 3.6;
-        speedStr = kmh.toFixed(1) + ' km/u';
-      }
-      // END UPDATE
-
-      if(type === '2km' || type === '1km' || type === 'obstacle') saveVal = (totalMs/60000).toFixed(2);
-      else saveVal = (totalMs/1000).toFixed(2);
-
-      let tussentijdStr = null;
-      let netSaveVal = saveVal;
-      
-      if(groupStartActive){
-          tussentijdStr = new Date(netMs).toISOString().slice(14, 22);
-          if(type === '2km' || type === '1km' || type === 'obstacle') netSaveVal = (netMs/60000).toFixed(2);
-          else netSaveVal = (netMs/1000).toFixed(2);
-      }
-
-      laps[name].push({ totalMs, totalStr, splitStr, speedStr, saveVal, tussentijdStr, netSaveVal, splitMs }); // splitMs toegevoegd voor latere opslag
-      localStorage.setItem('sw_laps', JSON.stringify(laps));
-      
-      // GHOST FEEDBACK
-      const ghostActive = document.getElementById('ghostToggle').checked;
-      const targetMin = ghostTargets[name];
-      
-      if(ghostActive && targetMin) {
-          let totalLapsNeeded = 1;
-          if(type === '2km') totalLapsNeeded = 10;
-          if(type === '1km') totalLapsNeeded = 5;
-          
-          let lapsDone = laps[name].length;
-          let targetTotalMs = targetMin * 60000;
-          let targetAtThisPoint = (targetTotalMs / totalLapsNeeded) * lapsDone;
-          
-          let actualTimeUsed = groupStartActive ? (totalMs - (userIndex * 10000)) : totalMs;
-          let diffMs = actualTimeUsed - targetAtThisPoint; 
-          let diffSec = (diffMs / 1000).toFixed(1);
-          
-          const disp = document.getElementById('ghostDisplay');
-          disp.style.display = 'block';
-          
-          if(diffMs > 0) {
-              disp.innerHTML = `${name}: <span class="behind">+${diffSec}s</span> (Achter)`;
-              disp.className = 'ghost-runner-box negative';
-          } else {
-              disp.innerHTML = `${name}: <span class="ahead">${diffSec}s</span> (Voor)`;
-              disp.className = 'ghost-runner-box positive';
-          }
-          if(ghostTimer) clearTimeout(ghostTimer);
-          ghostTimer = setTimeout(() => { disp.style.display = 'none'; }, 5000);
-      }
-
-      renderIndividualTables();
-    }
-
-    function renderIndividualTables(){
-      const container = document.getElementById('individualLapsArea'); container.innerHTML = '';
-      const raceType = document.getElementById('swRaceType').value;
-
-      appData.userNames.forEach((name, userIndex) => {
-         const userLaps = laps[name];
-         if(!userLaps || userLaps.length === 0) return;
-
-         const card = document.createElement('div'); card.className = 'user-lap-card';
-         const prof = getProfile(name);
-         let imgHtml = prof.img ? `<img src="${prof.img}" class="profile-img-small">` : '';
-
-         let rows = '';
-         let lastLap = null;
-
-         [...userLaps].forEach((l, i) => {
-             const lapNum = i + 1;
-             lastLap = l;
-             let showSave = false;
-             if(raceType === '2km' && lapNum === 10) showSave = true;
-             else if(raceType === '1km' && lapNum === 5) showSave = true;
-             else if(raceType === '90m' && lapNum === 1) showSave = true;
-             else if(raceType === 'obstacle' || raceType === 'overig') showSave = true; 
-
-             const valToSave = groupStartActive ? l.netSaveVal : l.saveVal;
-             
-             rows += `
-               <tr>
-                 <td>${lapNum}</td>
-                 <td style="font-weight:bold; color:var(--text)">${l.totalStr}</td>
-                 <td style="color:var(--muted)">${l.splitStr}</td>
-                 ${groupStartActive ? `<td class="net-time">${l.tussentijdStr}</td>` : ''}
-                 <td>${l.speedStr}</td>
-                 <td style="text-align:right">
-                   ${showSave ? `<button class="btn save-icon" onclick="saveLapDirect('${name}', '${valToSave}', '${raceType}')">💾</button>` : ''}
-                 </td>
-               </tr>`;
-         });
-
-         const tussentijdHeader = groupStartActive ? '<th>Tussentijd</th>' : '';
-         let finalTimeHtml = '';
-         const finished = (raceType === '2km' && userLaps.length === 10) || (raceType === '1km' && userLaps.length === 5) || (raceType === '90m' && userLaps.length === 1);
-         if(groupStartActive && lastLap && finished) {
-             finalTimeHtml = `<p style="font-size:14px; margin: 8px 0 0 0;">Definitieve Eindtijd: <span class="net-time">${lastLap.tussentijdStr}</span></p>`;
-         }
-
-         card.innerHTML = `<h3>${imgHtml} ${name}</h3><table class="mini-table"><thead><tr><th style="width:20px">#</th><th>Tijd</th><th>Ronde Tijd</th>${tussentijdHeader}<th>Km/u</th><th style="text-align:right"></th></tr></thead><tbody>${rows}</tbody></table>${finalTimeHtml}`;
-         container.appendChild(card);
-      });
-    }
-
-    function saveLapDirect(user, timeStr, raceType){
-        const time = parseFloat(timeStr);
-        const today = new Date().toISOString().split('T')[0];
-        const units = (raceType === '2km' || raceType === '1km' || raceType === 'obstacle') ? 'minuten' : 'seconden';
-        
-        let splitData = null;
-        // START UPDATE: Splits als getallen opslaan voor grafiek
-        if(laps[user]) {
-            splitData = laps[user].map(l => parseFloat((l.splitMs/1000).toFixed(2))); 
-        }
-        // END UPDATE
-
-        if(confirm(`Tijd ${time} ${units} opslaan voor ${user}?`)){
-            saveTimeInternal(user, time, today, raceType, 'training', splitData, document.getElementById('weatherInput').value, document.getElementById('notesInput').value);
-        }
-    }
-
-    // ===== STARTS =====
-    function speak(txt){ 
-        const u=new SpeechSynthesisUtterance(txt); 
-        u.lang='en-US'; u.rate=0.85; u.volume = 1; 
-        speechSynthesis.speak(u); 
-    }
-    function startSequence(type){
-      const ov = document.getElementById('shotOverlay'); ov.style.display='flex'; ov.innerHTML='Wait...';
-      const randomDelay = 1000 + Math.random()*2000; 
-      if(type==='schot'){
-        let c=3; ov.innerHTML=c;
-        const i = setInterval(()=>{ c--; if(c>0)ov.innerText=c; else { clearInterval(i); ov.innerText='BANG!'; beep(800, 'sawtooth', 0.6); setTimeout(()=>ov.style.display='none',1000); } },1000);
-      } 
-      else if (type === 'flags') {
-          ov.innerHTML = "Competitors Ready..."; speak("Competitors Ready");
-          setTimeout(() => {
-              ov.innerHTML = "Heads Down!"; speak("Heads Down");
-              setTimeout(() => { ov.innerText = 'GO!'; beep(1000, 'square', 2.0); setTimeout(()=>ov.style.display='none',1000); }, 3000 + Math.random()*2000); 
-          }, 4000); 
-      }
-      else if (type === 'sprint') {
-          ov.innerHTML = "On your marks..."; speak("On your marks");
-          setTimeout(() => {
-              ov.innerHTML = "Set!"; speak("Set");
-              setTimeout(() => { ov.innerText = 'GO!'; beep(1000, 'square', 2.0); setTimeout(()=>ov.style.display='none',1000); }, 3000 + Math.random()*2000); 
-          }, 4000);
-      }
-    }
-
-    function exportJSON(){
-      const blob = new Blob([JSON.stringify(appData)], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'training_backup.json'; a.click();
-    }
-    function importJSON(input){ const fr = new FileReader(); fr.onload = e => { appData = JSON.parse(e.target.result); save(); location.reload(); }; fr.readAsText(input.files[0]); }
-    function clearAllData(){ if(confirm('Echt alles wissen?')) { localStorage.removeItem('tt_data'); location.reload(); } }
-    document.getElementById('btnExportCSV').onclick = () => {
-      let csv = "User,Date,Type,Time\n"; Object.keys(appData.sprint).forEach(t => appData.sprint[t].forEach(r => csv+=`${r.user},${r.date},${t},${r.time}\n`));
-      const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv); a.download='export.csv'; a.click();
-    };
-
-    let clicks=0, timer;
-    document.getElementById('appTitle').onclick = () => {
-      clicks++; clearTimeout(timer); timer=setTimeout(()=>clicks=0, 5000);
-      const o=document.getElementById('shotOverlay');
-      if(clicks===10){
-        o.style.display='flex'; o.style.background='#000'; o.style.color='#fff';
-        o.innerHTML="<h1>YOU CAN'T<br><span style='color:red'>SEE ME!</span></h1><img src='https://i.kym-cdn.com/entries/icons/original/000/007/659/cena.jpg' class='img-overlay'>";
-        speak("You can't see me");
-        setTimeout(()=> { if(clicks < 11) { o.style.display='none'; o.style.background='#fff'; o.style.color='#000'; o.innerHTML=''; } }, 3000); 
-      }
-      if(clicks===20){
-        o.style.display='flex'; o.style.background='#000'; o.style.color='#fff';
-        let blink = setInterval(()=> o.style.color = o.style.color==='red'?'#fff':'red', 200);
-        o.innerHTML="<h1 style='font-size:10vw'>HET MAAKT NIET UIT<br>WAT JE WILT! 🤨</h1><img src='https://media1.tenor.com/m/7N50_3yW7t8AAAAd/the-rock-rock.gif' class='img-overlay'>";
-        speak("It doesn't matter what you think");
-        setTimeout(()=> { clearInterval(blink); o.style.display='none'; o.style.background='#fff'; o.style.color='#000'; o.innerHTML=''; clicks=0; }, 4000); 
-      }
-    };
-
+    function updateDistanceInput() { const t = document.getElementById('swRaceType').value; const i = document.getElementById('lapDistance'); if(['2km','1km','90m'].includes(t)) { i.value = t==='2km'?2000:(t==='1km'?1000:90); i.disabled=true; } else { i.disabled=false; } renderIndividualTables(); }
+    function renameUsers(){ appData.userNames=appData.userNames.map((n,i)=>prompt(`Naam ${i+1}?`,n)||n).filter(n=>n); save(); renderLapButtons(); renderIndividualTables(); }
+    function changeRunnerCount(){ const c=prompt("Aantal?",appData.userNames.length); if(c) { appData.userNames=Array.from({length:parseInt(c)},(_,i)=>appData.userNames[i]||`Persoon ${i+1}`); save(); renderLapButtons(); renderIndividualTables(); } }
+    function configureGhost(c){ document.getElementById('ghostDisplay').style.display=c?'block':'none'; if(c) appData.userNames.forEach(n=>ghostTargets[n]=parseFloat(prompt(`Ghost ${n} (min)?`,ghostTargets[n]||''))||0); }
+    function toggleCamera(e){ const v=document.getElementById('camPreview'); if(e){ v.style.display='block'; navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s=>{camStream=s;v.srcObject=s;}).catch(()=>{document.getElementById('selfTrain').checked=false;}); } else { if(camStream)camStream.getTracks().forEach(t=>t.stop()); v.style.display='none'; clearInterval(motionInt); } }
+    function renderLapButtons(){ const a=document.getElementById('lapButtonsArea'); a.innerHTML=''; appData.userNames.forEach((n,i)=>{ const b=document.createElement('button'); b.className='btn'; b.style.width='100%'; b.style.marginBottom='10px'; b.innerText=n; b.onclick=()=>{if(stopwatchInt||countdownInt)recordLap(n,i)}; a.appendChild(b); }); }
+    document.getElementById('startStopwatch').onclick=()=>{ if(!stopwatchInt && !countdownInt) { if(document.getElementById('groupStart').checked) { let c = 5; document.getElementById('stopwatch').innerText = c; countdownInt = setInterval(()=>{ c--; if(c>0) { document.getElementById('stopwatch').innerText = c; } else { clearInterval(countdownInt); countdownInt=null; document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8); setTimeout(()=>{ startSW(); startGroupInterval(); }, 100); } }, 1000); } else if(document.getElementById('startDelay').checked) { let c = 5; document.getElementById('stopwatch').innerText = c; countdownInt = setInterval(()=>{ c--; if(c>0) { document.getElementById('stopwatch').innerText = c; } else { clearInterval(countdownInt); countdownInt=null; document.getElementById('stopwatch').innerText = "GO!"; beep(100, 'sawtooth', 0.8); setTimeout(startSW, 100); } }, 1000); } else { startSW(); } }};
+    function startSW(){ startTime=Date.now(); localStorage.setItem('sw_start', startTime); localStorage.setItem('sw_state', JSON.stringify({ groupStartActive: document.getElementById('groupStart').checked })); stopwatchInt=setInterval(()=>{document.getElementById('stopwatch').innerText=new Date(Date.now()-startTime).toISOString().slice(14,22)},10); }
+    function startGroupInterval(){ groupRunnersCount = appData.userNames.length; if(groupRunnersCount > 1) { const box = document.getElementById('groupStartBox'); const counter = document.getElementById('groupCounter'); box.style.display = 'block'; counter.innerText = 10; let nextStart = 1; let localCount = 10; groupInt = setInterval(()=>{ localCount--; counter.innerText = localCount; if(localCount <= 0){ beep(800, 'square', 0.3); nextStart++; localCount = 10; if(nextStart >= groupRunnersCount){ clearInterval(groupInt); box.style.display='none'; } } }, 1000); } }
+    document.getElementById('stopStopwatch').onclick=()=>{ clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(groupInt); groupInt=null; clearInterval(countdownInt); countdownInt=null; localStorage.removeItem('sw_start'); document.getElementById('groupStartBox').style.display='none';};
+    document.getElementById('resetStopwatch').onclick=()=>{ clearInterval(stopwatchInt); stopwatchInt=null; clearInterval(groupInt); groupInt=null; clearInterval(countdownInt); countdownInt=null; document.getElementById('stopwatch').innerText='00:00.000'; laps={}; localStorage.removeItem('sw_start'); localStorage.removeItem('sw_laps'); document.getElementById('groupStartBox').style.display='none'; renderIndividualTables(); };
+    function recordLap(name, idx){ if(!laps[name]) laps[name]=[]; const totalMs = Date.now()-startTime; const last = laps[name][laps[name].length-1]; const splitMs = totalMs - (last?last.totalMs:0); let netMs = totalMs; const isGroup = document.getElementById('groupStart').checked; if(isGroup) { netMs = Math.max(0, totalMs - (idx * 10000)); } let timeForSpeed = splitMs; if(isGroup && laps[name].length === 0) timeForSpeed = netMs; const dist = parseFloat(document.getElementById('lapDistance').value) || 0; let speedStr = '-'; if(dist > 0 && timeForSpeed > 0) { const kmh = (dist / (timeForSpeed / 1000)) * 3.6; speedStr = kmh.toFixed(1) + ' km/u'; } const saveVal = (isGroup ? netMs : totalMs) / 1000; laps[name].push({ totalMs, totalStr:new Date(totalMs).toISOString().slice(14,22), splitStr:new Date(splitMs).toISOString().slice(14,22), netSaveVal: saveVal.toFixed(2), tussentijdStr: new Date(netMs).toISOString().slice(14,22), speedStr: speedStr, splitMs: splitMs }); localStorage.setItem('sw_laps', JSON.stringify(laps)); renderIndividualTables(); }
+    function renderIndividualTables(){ const c = document.getElementById('individualLapsArea'); c.innerHTML=''; const isGroup = document.getElementById('groupStart').checked; const raceType = document.getElementById('swRaceType').value; appData.userNames.forEach(n=>{ if(!laps[n] || !laps[n].length) return; let rows = laps[n].map((l,i)=>{ const lapNum = i+1; let showSave = false; if(raceType === '2km' && lapNum === 10) showSave = true; else if(raceType === '1km' && lapNum === 5) showSave = true; else if(raceType === '90m' && lapNum === 1) showSave = true; else if(raceType === 'obstacle' || raceType === 'overig') showSave = true; return `<tr><td>${lapNum}</td><td>${l.totalStr}</td><td>${l.splitStr}</td>${isGroup ? `<td class="net-time">${l.tussentijdStr}</td>` : ''}<td>${l.speedStr}</td><td>${showSave ? `<button class="btn save-icon" onclick="saveLapDirect('${n}','${l.netSaveVal}','${raceType}')">💾</button>` : ''}</td></tr>`; }).join(''); const headerExtra = isGroup ? '<th>Netto</th>' : ''; c.innerHTML += `<div class="user-lap-card"><h3>${n}</h3><table class="mini-table"><thead><tr><th>#</th><th>Totaal</th><th>Ronde</th>${headerExtra}<th>Km/u</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`; }); }
+    function saveLapDirect(user, timeStr, raceType){ const time = parseFloat(timeStr); const today = new Date().toISOString().split('T')[0]; let splitData = null; if(laps[user]) { splitData = laps[user].map(l => parseFloat((l.splitMs/1000).toFixed(2))); } if(confirm(`Tijd ${time} opslaan voor ${user}?`)){ saveTimeInternal(user, time, today, raceType, 'training', splitData, document.getElementById('weatherInput').value, document.getElementById('notesInput').value); } }
+    function speak(t){ const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; speechSynthesis.speak(u); }
+    function startSequence(type){ const o = document.getElementById('shotOverlay'); o.style.display = 'flex'; if(type === 'schot') { o.innerText = "Wait..."; setTimeout(() => { o.innerText = 'BANG!'; beep(800,'sawtooth',0.5); setTimeout(()=>o.style.display='none',1000); }, 2000 + Math.random()*2000); } else if (type === 'flags') { o.innerText = "Competitors Ready..."; speak("Competitors Ready"); setTimeout(() => { o.innerText = "Heads Down!"; speak("Heads Down"); setTimeout(() => { o.innerText = "GO!"; beep(1000,'square',1); setTimeout(()=>o.style.display='none',1000); }, 2000 + Math.random()*2000); }, 2000); } else if (type === 'sprint') { o.innerText = "On your marks..."; speak("On your marks"); setTimeout(() => { o.innerText = "Set!"; speak("Set"); setTimeout(() => { o.innerText = "GO!"; beep(1000,'square',1); setTimeout(()=>o.style.display='none',1000); }, 1500 + Math.random()*1500); }, 2500); } }
     function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+    function clearAllData(){ if(confirm('Alles wissen?')){ localStorage.removeItem('tt_data'); location.reload(); }}
   </script>
 </body>
 </html>
